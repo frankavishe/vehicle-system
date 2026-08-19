@@ -1,0 +1,58 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.Python
+build/
+dist/
+*.sqlite3
+.env
+backend/secrets/*
+!backend/secrets/.gitkeep
+.pytest_cache/
+.coverage
+htmlcov/
+staticfiles/
+media/
+
+# --- Node / Next.js (web/, Phase 2+) ---
+node_modules/
+.next/
+out/
+web/.env*.local
+
+# --- Flutter / Dart (mobile/, Phase 3+) ---
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/**/ios/Pods/
+mobile/**/android/.gradle/
+*.iml
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Docker ---
+infra/.env
+
+# --- Secrets / keys (Firebase service-account, APNs, mobile configs,
+# TLS/signing keys — Phase 1-4 per PLAN.md §5.4/§7) ---
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+**/google-services.json
+**/GoogleService-Info.plist
+
+# --- Docs (spec PDF, planning/tracking markdown) ---
+*.pdf
+*.md
