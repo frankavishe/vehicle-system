@@ -56,3 +56,10 @@ infra/.env
 # --- Docs (spec PDF, planning/tracking markdown) ---
 *.pdf
 *.md
+# ...except standard package docs that are normally committed, not the
+# root-level planning/tracking docs (PLAN.md/phase.md/work.md) this rule
+# exists for. web/AGENTS.md is Next.js 16's own generated agent-guidance
+# file — it explicitly asks to be committed (see work.md, 2026-08-20).
+!web/README.md
+!web/AGENTS.md
+!web/CLAUDE.md
