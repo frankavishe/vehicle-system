@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.providers",
     "apps.notifications",
+    "apps.catalog",
+    "apps.orders",
 ]
 
 MIDDLEWARE = [
@@ -143,15 +145,21 @@ DEFAULT_CURRENCY = env("DEFAULT_CURRENCY", default="TZS")
 
 # --- Phase 2/4: Flutterwave + Selcom (dual-gateway, see PLAN.md §5.3/§8) ---
 # Human account-setup action item — PLAN.md §7 Phase 1 checklist.
-# No integration code reads these yet (Phase 2-4).
+# Phase 2 is where these finally get read (apps/orders/gateways/*).
 FLUTTERWAVE_PUBLIC_KEY = env("FLUTTERWAVE_PUBLIC_KEY", default="")
 FLUTTERWAVE_SECRET_KEY = env("FLUTTERWAVE_SECRET_KEY", default="")
 FLUTTERWAVE_ENCRYPTION_KEY = env("FLUTTERWAVE_ENCRYPTION_KEY", default="")
 FLUTTERWAVE_WEBHOOK_SECRET_HASH = env("FLUTTERWAVE_WEBHOOK_SECRET_HASH", default="")
+FLUTTERWAVE_BASE_URL = env("FLUTTERWAVE_BASE_URL", default="https://api.flutterwave.com")
 SELCOM_API_KEY = env("SELCOM_API_KEY", default="")
 SELCOM_API_SECRET = env("SELCOM_API_SECRET", default="")
 SELCOM_VENDOR_ID = env("SELCOM_VENDOR_ID", default="")
 SELCOM_WEBHOOK_SECRET = env("SELCOM_WEBHOOK_SECRET", default="")
+SELCOM_BASE_URL = env("SELCOM_BASE_URL", default="https://apigw.selcommobile.com")
+
+# Where the checkout gateways redirect the customer back to after hosted
+# payment (Next.js storefront's /checkout/complete page).
+FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:3000")
 
 # --- Phase 3/4: Firebase Cloud Messaging + web push (see PLAN.md §5.4) ---
 # Human account-setup action item — PLAN.md §7 Phase 1 checklist.

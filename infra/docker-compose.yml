@@ -17,8 +17,11 @@ services:
 
   redis:
     image: redis:7.2-alpine
-    ports:
-      - "6379:6379"
+    # No host port mapping: only `backend`/future Celery workers talk to
+    # this over the internal compose network (`redis:6379`); host-exposing
+    # it isn't needed and risks colliding with other projects' Redis
+    # containers on the default 6379 port (hit this locally, hence the
+    # comment).
     volumes:
       - redis_data:/data
 
