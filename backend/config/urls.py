@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -9,6 +11,12 @@ urlpatterns = [
     path("api/v1/", include("apps.notifications.urls")),
     path("api/v1/", include("apps.catalog.urls")),
     path("api/v1/", include("apps.orders.urls")),
+    path("api/v1/", include("apps.dispatch.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
 ]
+
+if settings.DEBUG:
+    # Provider document uploads (apps.providers.ProviderDocument) — local
+    # disk storage only this phase, served directly in dev only.
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

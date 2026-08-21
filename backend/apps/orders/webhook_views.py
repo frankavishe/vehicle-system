@@ -36,8 +36,10 @@ def _apply_verified_result(payment, verified):
 
     if payment.order_id:
         Order.objects.filter(pk=payment.order_id).update(status=OrderStatus.PAID)
-    # Phase 3: else cascade to service_requests fare settlement once
-    # apps.dispatch exists.
+    # Phase 4: else cascade to service_requests fare settlement, once
+    # /service-requests/{id}/pay itself exists (needs the OSRM/Haversine
+    # fare engine, PLAN.md §5.2). apps.dispatch.ServiceRequest exists now
+    # (Phase 3), but nothing creates a Payment against it yet.
 
 
 class _BaseWebhookView(APIView):

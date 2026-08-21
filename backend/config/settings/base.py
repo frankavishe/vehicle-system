@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.catalog",
     "apps.orders",
+    "apps.dispatch",
 ]
 
 MIDDLEWARE = [
@@ -172,8 +173,26 @@ FIREBASE_WEB_VAPID_PUBLIC_KEY = env("FIREBASE_WEB_VAPID_PUBLIC_KEY", default="")
 
 # --- Phase 3: Beem Africa SMS fallback, dispatch-critical only (see PLAN.md §5.4) ---
 # Human account-setup action item — PLAN.md §7 Phase 1 checklist.
-# No integration code reads these yet (Phase 3).
 BEEM_API_KEY = env("BEEM_API_KEY", default="")
 BEEM_SECRET_KEY = env("BEEM_SECRET_KEY", default="")
 BEEM_VENDOR_ID = env("BEEM_VENDOR_ID", default="")
 BEEM_SENDER_ID = env("BEEM_SENDER_ID", default="")
+BEEM_BASE_URL = env("BEEM_BASE_URL", default="https://apisms.beem.africa")
+
+# --- Phase 3: Celery (broker only — no result backend, every task here is
+# fire-and-forget). Reuses Phase 1's Redis instance. ---
+CELERY_BROKER_URL = REDIS_URL
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# --- Phase 3: apps.dispatch radius matching (PLAN.md §5.1) ---
+# Index-backed prefilter radius (km) before the per-provider
+# service_radius_km cut — see apps/dispatch/services/matching.py.
+DISPATCH_MAX_RADIUS_KM = env.int("DISPATCH_MAX_RADIUS_KM", default=50)
+
+# --- Phase 3: apps.providers.ProviderDocument uploads ---
+# Local disk storage only this phase — no S3/object storage, consistent
+# with §8's open hosting question. `backend/media/` is gitignored.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

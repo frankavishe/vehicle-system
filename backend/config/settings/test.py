@@ -13,3 +13,8 @@ DATABASES["default"] = env.db(  # noqa: F405
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",  # fast, test-only
 ]
+
+# Phase 3: tasks run synchronously in-process during tests — no worker/
+# broker round-trip, no need for a running Redis in CI/local pytest.
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True

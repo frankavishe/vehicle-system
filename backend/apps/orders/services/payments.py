@@ -1,6 +1,6 @@
-"""Payment initiation, generic over `order=`/`service_request_id=` so
-Phase 3's `/service-requests/{id}/pay` can call this same function with
-`service_request_id=` instead of `order=` — no rework needed then."""
+"""Payment initiation, generic over `order=`/`service_request=` so
+Phase 4's `/service-requests/{id}/pay` can call this same function with
+`service_request=` instead of `order=` — no rework needed then."""
 
 from django.conf import settings
 from rest_framework import serializers
@@ -9,23 +9,23 @@ from ..gateways.routing import get_gateway_client, select_gateway
 from ..models import Payment
 
 
-def initiate_payment(*, user, payment_method, order=None, service_request_id=None):
-    if bool(order) == bool(service_request_id):
+def initiate_payment(*, user, payment_method, order=None, service_request=None):
+    if bool(order) == bool(service_request):
         raise serializers.ValidationError(
-            "Exactly one of order or service_request_id must be given."
+            "Exactly one of order or service_request must be given."
         )
 
-    amount = order.total_amount if order else None
+    amount = order.total_amount if order else service_request.final_fare or service_request.estimated_fare
     if amount is None:
-        # Phase 3 wires the service_request fare lookup in here once
-        # apps.dispatch exists; unreachable in Phase 2 since OrderPayView
-        # is the only caller and always passes `order=`.
-        raise NotImplementedError("service_request_id payments are wired up in Phase 3.")
+        # Phase 4 territory: the OSRM/Haversine fare engine (PLAN.md §5.2)
+        # is what actually populates estimated_fare/final_fare — until
+        # then a service_request has no fare to charge.
+        raise NotImplementedError("service_request fare calculation is wired up in Phase 4.")
 
     provider_gateway = select_gateway(payment_method)
     payment = Payment.objects.create(
         order=order,
-        service_request_id=service_request_id,
+        service_request=service_request,
         payment_method=payment_method,
         provider_gateway=provider_gateway,
         amount=amount,

@@ -42,6 +42,23 @@ services:
       redis:
         condition: service_started
 
+  celery_worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    command: celery -A config worker -l info
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ../backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    # No celery_beat service this phase (flagged deferral) — no periodic
+    # task exists until Phase 4's weekly payouts batch (PLAN.md §5.5).
+
   web:
     build:
       context: ../web

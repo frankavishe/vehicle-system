@@ -125,19 +125,23 @@ class PaymentStatus(models.TextChoices):
 class Payment(UUIDModel):
     """Matches PLAN.md §3.2's `payments` table.
 
-    `service_request_id` is deliberately a plain `UUIDField`, not a real
-    `ForeignKey` — `apps.dispatch.ServiceRequest` (PLAN.md §3.1) doesn't
-    exist yet (it's a Phase 3 model, out of scope for this phase per the
-    Phase 2 plan). Phase 3 converts this to a real `ForeignKey` via a
-    straightforward `AlterField` migration once that model exists; no data
-    migration is needed since the underlying UUID values are unaffected by
-    the type change.
-    """
+    `service_request` was a plain `UUIDField` (`service_request_id`)
+    through Phase 2, since `apps.dispatch.ServiceRequest` didn't exist
+    yet. Phase 3 converts it to a real `ForeignKey` now that the model
+    exists — schema-only change, the underlying UUID values are
+    unaffected. The `/service-requests/{id}/pay` view itself stays
+    deferred to Phase 4 (needs the fare engine)."""
 
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, null=True, blank=True, related_name="payments"
     )
-    service_request_id = models.UUIDField(null=True, blank=True, db_index=True)
+    service_request = models.ForeignKey(
+        "dispatch.ServiceRequest",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="payments",
+    )
     payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices)
     provider_gateway = models.CharField(max_length=20, choices=ProviderGateway.choices)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
