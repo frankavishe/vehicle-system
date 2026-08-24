@@ -26,6 +26,9 @@ def test_customer_creates_mechanic_request(auth_client, customer_user):
 
     sr = ServiceRequest.objects.get(customer=customer_user)
     assert sr.provider is None
+    # Phase 4: MECHANIC requests (no dropoff) get a flat FARE_BASE_FEE
+    # estimate at creation (apps/dispatch/services/fare.py).
+    assert response.data["estimated_fare"] is not None
 
 
 def test_recovery_requires_dropoff(auth_client, customer_user):
@@ -52,6 +55,9 @@ def test_recovery_with_dropoff_succeeds(auth_client, customer_user):
     )
     assert response.status_code == status.HTTP_201_CREATED
     assert response.data["dropoff_location"] == {"lat": -6.8000, "lng": 39.2800}
+    # RECOVERY has a real dropoff -> distance-based estimate (OSRM
+    # unreachable in tests, so this exercises the Haversine fallback).
+    assert response.data["estimated_fare"] is not None
 
 
 def test_non_customer_cannot_create(auth_client, mechanic_user):

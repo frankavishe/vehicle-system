@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
+from apps.notifications.models import Notification
 from apps.orders.models import OrderStatus
 from apps.orders.tests.factories import OrderFactory, OrderShipmentFactory
 
@@ -46,6 +47,10 @@ def test_admin_shipment_patch_sets_dispatched_on_first_courier_info(
     assert response.data["dispatched_at"] is not None
     order.refresh_from_db()
     assert order.status == OrderStatus.DISPATCHED
+    # Phase 4: dispatch cascades to an ORDER_UPDATE notification (§7).
+    assert Notification.objects.filter(
+        user=order.customer, category="ORDER_UPDATE", title="Your order is on its way"
+    ).exists()
 
 
 def test_admin_shipment_patch_sets_location(auth_client, admin_user):
@@ -82,6 +87,9 @@ def test_admin_shipment_mark_delivered_cascades_order_status(auth_client, admin_
     assert response.data["delivered_at"] is not None
     order.refresh_from_db()
     assert order.status == OrderStatus.DELIVERED
+    assert Notification.objects.filter(
+        user=order.customer, category="ORDER_UPDATE", title="Your order was delivered"
+    ).exists()
 
 
 def test_customer_cannot_patch_shipment(auth_client, customer_user):

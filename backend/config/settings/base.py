@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -17,6 +18,9 @@ DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
 
 INSTALLED_APPS = [
+    # `daphne` must precede `django.contrib.staticfiles` — Channels'
+    # own requirement, so its `runserver`override (ASGI-aware) wins.
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -30,6 +34,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "django_filters",
+    "channels",
     # local apps
     "apps.common",
     "apps.users",
@@ -38,6 +43,8 @@ INSTALLED_APPS = [
     "apps.catalog",
     "apps.orders",
     "apps.dispatch",
+    "apps.tracking",
+    "apps.admin_ops",
 ]
 
 MIDDLEWARE = [
@@ -83,6 +90,15 @@ DATABASES = {
 
 # --- Redis (Phase 3+ Celery, Phase 4 Channels pub/sub — reserved now per PLAN.md §7) ---
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+
+# --- Phase 4: Channels pub/sub layer for apps.tracking's WebSocket
+# consumer (PLAN.md §5.2). Reuses the same Redis instance as Celery. ---
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
 
 # --- Auth ---
 AUTH_USER_MODEL = "users.User"
@@ -196,3 +212,34 @@ DISPATCH_MAX_RADIUS_KM = env.int("DISPATCH_MAX_RADIUS_KM", default=50)
 # with §8's open hosting question. `backend/media/` is gitignored.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# --- Phase 4: OSRM + Haversine fare engine (PLAN.md §5.2) ---
+# `osrm` is docker-compose's own service name on the internal network;
+# unreachable/no-route always falls back to Haversine (apps/dispatch/services/fare.py).
+OSRM_BASE_URL = env("OSRM_BASE_URL", default="http://osrm:5000")
+OSRM_TIMEOUT_SECONDS = env.float("OSRM_TIMEOUT_SECONDS", default=3.0)
+# TZS, one flat MECHANIC call-out fee and the RECOVERY per-km rate — no
+# spec numbers given, launch defaults only, both env-overridable.
+FARE_BASE_FEE = env.float("FARE_BASE_FEE", default=5000.0)
+FARE_PER_KM_RATE = env.float("FARE_PER_KM_RATE", default=1500.0)
+
+# --- Phase 4: provider payouts (PLAN.md §5.5) ---
+# Confirmed with the user: 15% platform commission, no spec basis for the
+# number itself — a launch default, not a spec-derived figure.
+PLATFORM_COMMISSION_PCT = env.float("PLATFORM_COMMISSION_PCT", default=0.15)
+# §5.5 itself flags that a per-provider payout-wallet/gateway preference
+# is out of scope for launch ("provider_profiles would need a
+# payout_gateway preference field... out of scope") — every payout goes
+# out through this one gateway instead, until that field exists.
+PROVIDER_PAYOUT_GATEWAY = env("PROVIDER_PAYOUT_GATEWAY", default="FLUTTERWAVE")
+
+# --- Phase 4: weekly payout batch schedule (PLAN.md §5.5) ---
+# Monday 02:00 Africa/Dar_es_Salaam — PLAN only says "weekly", this exact
+# slot is an arbitrary but reasonable choice (low-traffic hour), flagged
+# rather than treated as a spec requirement.
+CELERY_BEAT_SCHEDULE = {
+    "weekly-provider-payouts": {
+        "task": "apps.admin_ops.tasks.run_weekly_payout_batch",
+        "schedule": crontab(day_of_week=1, hour=2, minute=0),
+    },
+}

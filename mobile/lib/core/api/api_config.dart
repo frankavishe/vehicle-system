@@ -12,4 +12,11 @@ class ApiConfig {
     'API_BASE_URL',
     defaultValue: 'http://10.0.2.2:8000/api/v1',
   );
+
+  /// Phase 4 (PLAN.md §5.2) — derived from [baseUrl] rather than its own
+  /// `--dart-define`, since it's always the same origin/host, just a
+  /// different scheme and without the `/api/v1` suffix (apps.tracking's
+  /// routing.py already includes that prefix in its own path).
+  static String get wsBaseUrl =>
+      baseUrl.replaceFirst(RegExp(r'^http'), 'ws').replaceFirst(RegExp(r'/api/v1$'), '');
 }

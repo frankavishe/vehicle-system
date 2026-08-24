@@ -20,7 +20,7 @@ import json
 import requests
 from django.conf import settings
 
-from .base import BaseGatewayClient, CheckoutResult, VerifiedTransaction
+from .base import BaseGatewayClient, CheckoutResult, DisbursementResult, VerifiedTransaction
 
 
 class SelcomClient(BaseGatewayClient):
@@ -46,7 +46,11 @@ class SelcomClient(BaseGatewayClient):
         # payment.transaction_ref is always set by initiate_payment() before
         # a gateway client is ever called (see services/payments.py).
         order_id = payment.transaction_ref
-        customer = payment.order.customer if payment.order_id else None
+        # Phase 4: a payment against a service_request has no `order` —
+        # resolve the payer from whichever side is actually set.
+        customer = (
+            payment.order.customer if payment.order_id else payment.service_request.customer
+        )
         body = json.dumps(
             {
                 "vendor": self.vendor_id,
@@ -98,3 +102,29 @@ class SelcomClient(BaseGatewayClient):
             return False
         expected = hmac.new(self.api_secret.encode(), request.body, hashlib.sha256).hexdigest()
         return hmac.compare_digest(received, expected)
+
+    def disburse(self, *, payout, phone: str) -> DisbursementResult:
+        """Selcom Wallet Cashin API — same mock-only caveat as
+        `initiate_checkout` above (no live Selcom sandbox exists; shaped
+        per Selcom's published docs, not yet confirmed against a real
+        account)."""
+        body = json.dumps(
+            {
+                "vendor": self.vendor_id,
+                "order_id": str(payout.id),
+                "reference": str(payout.id),
+                "amount": str(payout.amount),
+                "msisdn": phone,
+                "currency": settings.DEFAULT_CURRENCY,
+            }
+        ).encode()
+        response = requests.post(
+            f"{self.base_url}/v1/wallet/cashin", data=body, headers=self._headers(body), timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()["data"][0]
+        status_map = {"COMPLETED": "PAID", "PENDING": "PROCESSING", "FAILED": "FAILED"}
+        return DisbursementResult(
+            status=status_map.get(data.get("status"), "PROCESSING"),
+            gateway_transaction_id=data.get("reference"),
+        )

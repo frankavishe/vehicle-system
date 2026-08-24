@@ -9,12 +9,21 @@ from rest_framework.views import APIView
 from apps.common.permissions import IsCustomer, IsMechanic, IsProvider
 from apps.providers.models import ProviderProfile
 
-from .models import PartsSourcingRequest, PartsSourcingStatus, ServiceRequest, ServiceStatus, ServiceType
+from .models import (
+    PartsSourcingRequest,
+    PartsSourcingStatus,
+    Review,
+    ServiceRequest,
+    ServiceStatus,
+    ServiceType,
+)
 from .serializers import (
     PartsSourcingRequestApproveSerializer,
     PartsSourcingRequestCreateSerializer,
     PartsSourcingRequestOrderSerializer,
     PartsSourcingRequestSerializer,
+    ReviewCreateSerializer,
+    ReviewSerializer,
     ServiceRequestCreateSerializer,
     ServiceRequestSerializer,
     ServiceRequestStatusUpdateSerializer,
@@ -22,6 +31,11 @@ from .serializers import (
 )
 from .services.parts_sourcing import convert_to_order
 from .services.transitions import is_transition_allowed, role_may_transition
+
+# apps.orders is a Phase 2 app; apps.dispatch already reuses its Order
+# model (services/parts_sourcing.py) so this import direction is
+# established, not new.
+from apps.orders.services.payments import initiate_payment
 
 
 class ServiceRequestListCreateView(APIView):
@@ -173,8 +187,76 @@ class ServiceRequestStatusUpdateView(APIView):
             raise ValidationError(f"Your role may not set status to {target}.")
 
         sr.status = target
-        sr.save(update_fields=["status"])
+        update_fields = ["status"]
+        if target == ServiceStatus.COMPLETED:
+            # Phase 4 (PLAN.md §5.2): finalize at completion. No surge/
+            # time-based adjustment — final_fare is simply the estimate
+            # locked in, a deliberate simplification, not an oversight.
+            sr.final_fare = sr.estimated_fare
+            update_fields.append("final_fare")
+        sr.save(update_fields=update_fields)
         return Response(ServiceRequestSerializer(sr).data)
+
+
+class ServiceRequestPayView(APIView):
+    """POST /service-requests/{id}/pay — owner-only, body:
+    {"payment_method": "..."}. Mirrors apps.orders.views.OrderPayView
+    exactly; reuses the same generic initiate_payment() (PLAN.md §5.3),
+    now that final_fare/estimated_fare are populated (§5.2, Phase 4)."""
+
+    permission_classes = [permissions.IsAuthenticated, IsCustomer]
+
+    def post(self, request, pk):
+        sr = get_object_or_404(ServiceRequest, pk=pk, customer=request.user)
+        if sr.status != ServiceStatus.COMPLETED:
+            raise ValidationError("This request must be COMPLETED before it can be paid.")
+
+        payment_method = request.data.get("payment_method")
+        if not payment_method:
+            raise ValidationError({"payment_method": "This field is required."})
+
+        result = initiate_payment(
+            user=request.user, payment_method=payment_method, service_request=sr
+        )
+        return Response(result, status=status.HTTP_201_CREATED)
+
+
+class ServiceRequestReviewView(APIView):
+    """POST /service-requests/{id}/review — the request's own customer,
+    only once COMPLETED, one review per request (Review.service_request
+    is OneToOne). Notifies the provider on success (§7's "notifications
+    wiring end-to-end")."""
+
+    permission_classes = [permissions.IsAuthenticated, IsCustomer]
+
+    def post(self, request, pk):
+        sr = get_object_or_404(ServiceRequest, pk=pk, customer=request.user)
+        if sr.status != ServiceStatus.COMPLETED:
+            raise ValidationError("This request must be COMPLETED before it can be reviewed.")
+        if Review.objects.filter(service_request=sr).exists():
+            raise ValidationError("This request has already been reviewed.")
+
+        serializer = ReviewCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        review = Review.objects.create(
+            service_request=sr,
+            customer=request.user,
+            rating=serializer.validated_data["rating"],
+            comment=serializer.validated_data.get("comment"),
+        )
+
+        if sr.provider_id:
+            from apps.notifications.models import NotificationCategory
+            from apps.notifications.services.create import create_and_send
+
+            create_and_send(
+                user=sr.provider,
+                category=NotificationCategory.GENERAL,
+                title="You received a review",
+                body=f"{request.user.full_name} left you a {review.rating}-star review.",
+            )
+
+        return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
 
 
 class PartsSourcingRequestListCreateView(APIView):

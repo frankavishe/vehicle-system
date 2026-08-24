@@ -108,3 +108,92 @@ export interface InitiatePaymentResult {
   payment_id: string;
   checkout_url: string;
 }
+
+// --- Phase 4 ---
+
+export type ServiceType = "MECHANIC" | "RECOVERY";
+export type ServiceRequestStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "EN_ROUTE"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+export interface ServiceRequestParty {
+  id: string;
+  full_name: string;
+  phone: string;
+}
+
+export interface ServiceRequest {
+  id: string;
+  customer: ServiceRequestParty;
+  provider: ServiceRequestParty | null;
+  service_type: ServiceType;
+  status: ServiceRequestStatus;
+  pickup_location: LatLng;
+  dropoff_location: LatLng | null;
+  problem_description: string | null;
+  estimated_fare: string | null;
+  final_fare: string | null;
+  created_at: string;
+}
+
+export interface ProviderMapEntry {
+  id: string;
+  full_name: string;
+  role: UserRole;
+  is_available: boolean;
+  lat: number | null;
+  lng: number | null;
+  updated_at: string;
+}
+
+export type DisputeStatus = "OPEN" | "RESOLVED";
+
+export interface Dispute {
+  id: string;
+  service_request: string;
+  raised_by: string | null;
+  reason: string | null;
+  status: DisputeStatus;
+  resolved_by: string | null;
+  created_at: string;
+}
+
+export type PayoutStatus = "PENDING" | "PROCESSING" | "PAID" | "FAILED";
+
+export interface PayoutItem {
+  id: string;
+  service_request: string | null;
+  amount: string;
+}
+
+export interface Payout {
+  id: string;
+  provider: string;
+  amount: string;
+  period_start: string | null;
+  period_end: string | null;
+  is_manual: boolean;
+  provider_gateway: "FLUTTERWAVE" | "SELCOM";
+  gateway_transaction_id: string | null;
+  status: PayoutStatus;
+  created_at: string;
+  paid_at: string | null;
+  items: PayoutItem[];
+}
+
+export interface AdminAnalytics {
+  orders_by_status: Record<string, number>;
+  service_requests_by_status: Record<string, number>;
+  revenue: number;
+  active_providers: number;
+  open_disputes: number;
+}

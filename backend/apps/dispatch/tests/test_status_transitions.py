@@ -28,10 +28,12 @@ def test_provider_advances_en_route_to_in_progress(auth_client, mechanic_user):
 
 
 def test_provider_completes_in_progress(auth_client, mechanic_user):
-    sr = _sr(status=ServiceStatus.IN_PROGRESS, provider=mechanic_user)
+    sr = _sr(status=ServiceStatus.IN_PROGRESS, provider=mechanic_user, estimated_fare="5000.00")
     client = auth_client(mechanic_user)
     response = client.patch(reverse("service-requests-status", args=[sr.id]), {"status": "COMPLETED"})
     assert response.status_code == status.HTTP_200_OK
+    # Phase 4: completion locks in final_fare = estimated_fare (§5.2).
+    assert response.data["final_fare"] == "5000.00"
 
 
 def test_customer_cannot_advance_to_en_route(auth_client, customer_user):

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.catalog.models import SparePart
@@ -100,3 +101,28 @@ class PartsSourcingRequest(UUIDModel):
 
     def __str__(self):
         return f"PartsSourcingRequest<{self.id}, {self.status}>"
+
+
+class Review(UUIDModel):
+    """Matches PLAN.md §3.2's `reviews` table — the source table
+    `provider_profiles.rating` is only ever referenced from, never
+    populated by (§3.2's own note). Lives here, not `apps.providers`,
+    since a review is created off a completed `ServiceRequest`, mirroring
+    where `PartsSourcingRequest` lives for the same reason."""
+
+    service_request = models.OneToOneField(
+        ServiceRequest, on_delete=models.CASCADE, related_name="review"
+    )
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews_given"
+    )
+    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "reviews"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Review<{self.service_request_id}, {self.rating}>"

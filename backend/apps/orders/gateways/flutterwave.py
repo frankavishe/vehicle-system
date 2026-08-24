@@ -12,7 +12,7 @@ import hmac
 import requests
 from django.conf import settings
 
-from .base import BaseGatewayClient, CheckoutResult, VerifiedTransaction
+from .base import BaseGatewayClient, CheckoutResult, DisbursementResult, VerifiedTransaction
 
 
 class FlutterwaveClient(BaseGatewayClient):
@@ -27,7 +27,11 @@ class FlutterwaveClient(BaseGatewayClient):
         # payment.transaction_ref is always set by initiate_payment() before
         # a gateway client is ever called (see services/payments.py).
         tx_ref = payment.transaction_ref
-        customer = payment.order.customer if payment.order_id else None
+        # Phase 4: a payment against a service_request has no `order` —
+        # resolve the payer from whichever side is actually set.
+        customer = (
+            payment.order.customer if payment.order_id else payment.service_request.customer
+        )
         body = {
             "tx_ref": tx_ref,
             "amount": str(payment.amount),
@@ -77,3 +81,30 @@ class FlutterwaveClient(BaseGatewayClient):
         if not expected or not received:
             return False
         return hmac.compare_digest(received, expected)
+
+    def disburse(self, *, payout, phone: str) -> DisbursementResult:
+        """Flutterwave Transfers API — mobile-money payouts route through
+        the same `/v3/transfers` endpoint as bank transfers, keyed by
+        `account_bank`'s network code. **Docs-based, not yet confirmed
+        against a live Flutterwave account** — same epistemic caveat as
+        Selcom's `disburse()` (see selcom.py's module docstring); isolated
+        into this one function so a correction later is a one-function
+        fix, not a refactor."""
+        body = {
+            "account_bank": "MPS",  # Flutterwave's mobile-money network code, Tanzania
+            "account_number": phone,
+            "amount": str(payout.amount),
+            "currency": settings.DEFAULT_CURRENCY,
+            "narration": f"AutoServe payout {payout.id}",
+            "reference": str(payout.id),
+        }
+        response = requests.post(
+            f"{self.base_url}/v3/transfers", json=body, headers=self._headers(), timeout=15
+        )
+        response.raise_for_status()
+        data = response.json()["data"]
+        status_map = {"NEW": "PROCESSING", "SUCCESSFUL": "PAID", "FAILED": "FAILED"}
+        return DisbursementResult(
+            status=status_map.get(data.get("status"), "PROCESSING"),
+            gateway_transaction_id=str(data.get("id")) if data.get("id") is not None else None,
+        )

@@ -15,6 +15,9 @@ backend/secrets/*
 htmlcov/
 staticfiles/
 media/
+# celery beat's own schedule-state file (config/settings/base.py's
+# CELERY_BEAT_SCHEDULE, Phase 4) — a runtime DB, not source.
+celerybeat-schedule*
 
 # --- Node / Next.js (web/, Phase 2+) ---
 node_modules/
@@ -64,3 +67,8 @@ infra/.env
 !web/AGENTS.md
 !web/CLAUDE.md
 !mobile/README.md
+!infra/osrm/README.md
+
+# --- Phase 4: OSRM Tanzania extract — downloaded/processed locally per
+# infra/osrm/README.md, never committed (hundreds of MB). ---
+infra/osrm/data/

@@ -8,6 +8,7 @@ import '../../features/customer/screens/customer_shell.dart';
 import '../../features/customer/screens/request_detail_screen.dart';
 import '../../features/provider/screens/provider_job_detail_screen.dart';
 import '../../features/provider/screens/provider_shell.dart';
+import '../../features/tracking/screens/tracking_screen.dart';
 import '../auth/auth_state.dart';
 
 /// Role -> the shell route it's confined to. Admin's Phase-3 mobile
@@ -85,6 +86,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) =>
                 RequestDetailScreen(requestId: state.pathParameters['id']!),
           ),
+          // Nested per-role (not one shared top-level route) because
+          // computeRedirect above confines every authenticated user to
+          // paths under their own role's home — see its docstring.
+          GoRoute(
+            path: 'tracking/:id',
+            builder: (context, state) =>
+                TrackingScreen(requestId: state.pathParameters['id']!),
+          ),
         ],
       ),
       GoRoute(
@@ -96,6 +105,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) =>
                 ProviderJobDetailScreen(requestId: state.pathParameters['id']!, role: 'MECHANIC'),
           ),
+          GoRoute(
+            path: 'tracking/:id',
+            builder: (context, state) =>
+                TrackingScreen(requestId: state.pathParameters['id']!),
+          ),
         ],
       ),
       GoRoute(
@@ -106,6 +120,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'jobs/:id',
             builder: (context, state) =>
                 ProviderJobDetailScreen(requestId: state.pathParameters['id']!, role: 'RECOVERY'),
+          ),
+          GoRoute(
+            path: 'tracking/:id',
+            builder: (context, state) =>
+                TrackingScreen(requestId: state.pathParameters['id']!),
           ),
         ],
       ),

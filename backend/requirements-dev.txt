@@ -4,3 +4,5 @@ pytest-django==4.8.*
 factory-boy==3.3.*
 Faker==26.0.*
 responses==0.25.*
+# Phase 4: async WebsocketCommunicator tests for apps.tracking
+pytest-asyncio==0.24.*

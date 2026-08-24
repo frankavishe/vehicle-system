@@ -18,6 +18,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <Link href="/admin/inventory" className="hover:text-asphalt">
           Inventory
         </Link>
+        <Link href="/admin/map" className="hover:text-asphalt">
+          Fleet map
+        </Link>
+        <Link href="/admin/disputes" className="hover:text-asphalt">
+          Disputes
+        </Link>
+        <Link href="/admin/payouts" className="hover:text-asphalt">
+          Payouts
+        </Link>
+        <Link href="/admin/analytics" className="hover:text-asphalt">
+          Analytics
+        </Link>
       </nav>
       {children}
     </div>
