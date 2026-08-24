@@ -7,6 +7,8 @@ from .views import (
     ServiceRequestAcceptView,
     ServiceRequestDetailView,
     ServiceRequestListCreateView,
+    ServiceRequestPayView,
+    ServiceRequestReviewView,
     ServiceRequestStatusUpdateView,
 )
 
@@ -22,6 +24,16 @@ urlpatterns = [
         "service-requests/<uuid:pk>/status",
         ServiceRequestStatusUpdateView.as_view(),
         name="service-requests-status",
+    ),
+    path(
+        "service-requests/<uuid:pk>/pay",
+        ServiceRequestPayView.as_view(),
+        name="service-requests-pay",
+    ),
+    path(
+        "service-requests/<uuid:pk>/review",
+        ServiceRequestReviewView.as_view(),
+        name="service-requests-review",
     ),
     path(
         "service-requests/<uuid:sr_pk>/parts-requests",

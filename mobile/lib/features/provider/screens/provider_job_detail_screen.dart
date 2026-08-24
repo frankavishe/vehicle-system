@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
 import '../../../core/theme/app_theme.dart';
@@ -16,6 +17,14 @@ final _jobDetailProvider = FutureProvider.autoDispose.family<ServiceRequestDto, 
 /// apps/dispatch/services/transitions.py's role map — provider-reachable
 /// targets only (this screen never offers CANCELLED-by-customer options).
 const _providerTargets = [ServiceStatus.enRoute, ServiceStatus.inProgress, ServiceStatus.completed];
+
+/// Phase 4 (PLAN.md §5.2) — mirrors request_detail_screen.dart's
+/// _isTrackable; the provider side also drives publishing its own
+/// location once here.
+bool _isTrackable(ServiceStatus status) => switch (status) {
+      ServiceStatus.accepted || ServiceStatus.enRoute || ServiceStatus.inProgress => true,
+      _ => false,
+    };
 
 class ProviderJobDetailScreen extends ConsumerWidget {
   const ProviderJobDetailScreen({super.key, required this.requestId, required this.role});
@@ -141,6 +150,14 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Text('Accept job'),
           ),
+        if (_isTrackable(sr.status)) ...[
+          FilledButton.icon(
+            onPressed: () => context.push('/${widget.role.toLowerCase()}/tracking/${sr.id}'),
+            icon: const Icon(Icons.map),
+            label: const Text('Open live tracking'),
+          ),
+          const SizedBox(height: 8),
+        ],
         Wrap(
           spacing: 8,
           children: [

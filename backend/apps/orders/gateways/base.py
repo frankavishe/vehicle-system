@@ -21,6 +21,12 @@ class VerifiedTransaction:
     gateway_transaction_id: str
 
 
+@dataclass
+class DisbursementResult:
+    status: str  # "PROCESSING" | "PAID" | "FAILED" — matches PayoutStatus
+    gateway_transaction_id: str | None = None
+
+
 class BaseGatewayClient(ABC):
     @abstractmethod
     def initiate_checkout(self, *, payment, redirect_url: str) -> CheckoutResult:
@@ -37,3 +43,10 @@ class BaseGatewayClient(ABC):
     @abstractmethod
     def verify_webhook_signature(self, request) -> bool:
         """Validates an inbound webhook request's signature/hash header."""
+
+    @abstractmethod
+    def disburse(self, *, payout, phone: str) -> DisbursementResult:
+        """Phase 4 (PLAN.md §5.5): pays `payout` (an
+        `apps.admin_ops.models.Payout` instance) out to `phone` (E.164) —
+        the reverse-direction counterpart of `initiate_checkout`, reusing
+        the same gateway integration rather than a third vendor."""

@@ -186,12 +186,27 @@ class AdminOrderShipmentView(APIView):
             shipment.delivered_at = timezone.now()
         shipment.save()
 
+        from apps.notifications.models import NotificationCategory
+        from apps.notifications.services.create import create_and_send
+
         if shipment.delivered_at and order.status != "DELIVERED":
             order.status = "DELIVERED"
             order.save(update_fields=["status"])
+            create_and_send(
+                user=order.customer,
+                category=NotificationCategory.ORDER_UPDATE,
+                title="Your order was delivered",
+                body=f"Order #{order.id} has been delivered.",
+            )
         elif shipment.dispatched_at and order.status == "PAID":
             order.status = "DISPATCHED"
             order.save(update_fields=["status"])
+            create_and_send(
+                user=order.customer,
+                category=NotificationCategory.ORDER_UPDATE,
+                title="Your order is on its way",
+                body=f"Order #{order.id} has been dispatched.",
+            )
 
         return Response(OrderShipmentSerializer(shipment).data)
 

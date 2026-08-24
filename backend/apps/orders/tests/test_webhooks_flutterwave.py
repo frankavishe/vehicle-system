@@ -3,6 +3,8 @@ import responses
 from django.urls import reverse
 from rest_framework import status
 
+from apps.dispatch.tests.factories import ServiceRequestFactory
+from apps.notifications.models import Notification
 from apps.orders.models import OrderStatus, PaymentStatus
 from apps.orders.tests.factories import OrderFactory, PaymentFactory
 
@@ -73,6 +75,28 @@ def test_webhook_marks_payment_successful_and_order_paid(api_client, settings):
     order.refresh_from_db()
     assert payment.status == PaymentStatus.SUCCESSFUL
     assert order.status == OrderStatus.PAID
+
+
+@responses.activate
+def test_webhook_marks_service_request_payment_successful_and_notifies(api_client, settings):
+    """Phase 4: no service_status models "paid" — the cascade is just
+    notifying both parties (apps/orders/webhook_views.py)."""
+    _configure(settings)
+    sr = ServiceRequestFactory(status="COMPLETED", estimated_fare="5000.00")
+    payment = PaymentFactory(order=None, service_request=sr, transaction_ref="tx-1", amount="5000.00")
+    _mock_verify("successful", 5000)
+
+    response = api_client.post(
+        reverse("webhook-flutterwave"),
+        {"data": {"tx_ref": "tx-1"}},
+        format="json",
+        HTTP_VERIF_HASH="shared-secret",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    payment.refresh_from_db()
+    assert payment.status == PaymentStatus.SUCCESSFUL
+    assert Notification.objects.filter(user=sr.customer, title="Payment received").exists()
 
 
 @responses.activate

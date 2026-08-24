@@ -36,10 +36,29 @@ def _apply_verified_result(payment, verified):
 
     if payment.order_id:
         Order.objects.filter(pk=payment.order_id).update(status=OrderStatus.PAID)
-    # Phase 4: else cascade to service_requests fare settlement, once
-    # /service-requests/{id}/pay itself exists (needs the OSRM/Haversine
-    # fare engine, PLAN.md §5.2). apps.dispatch.ServiceRequest exists now
-    # (Phase 3), but nothing creates a Payment against it yet.
+    elif payment.service_request_id:
+        # Phase 4: no service_status value means "paid" (§3.1's
+        # service_status enum has no such state — the request is already
+        # COMPLETED by the time it's payable, see
+        # apps.dispatch.views.ServiceRequestPayView) — the only cascade
+        # needed here is telling both parties the money cleared.
+        from apps.notifications.models import NotificationCategory
+        from apps.notifications.services.create import create_and_send
+
+        sr = payment.service_request
+        create_and_send(
+            user=sr.customer,
+            category=NotificationCategory.GENERAL,
+            title="Payment received",
+            body=f"Your payment of {payment.amount} for this {sr.service_type.lower()} request was received.",
+        )
+        if sr.provider_id:
+            create_and_send(
+                user=sr.provider,
+                category=NotificationCategory.GENERAL,
+                title="Payment received",
+                body=f"The customer's payment of {payment.amount} for this job was received.",
+            )
 
 
 class _BaseWebhookView(APIView):

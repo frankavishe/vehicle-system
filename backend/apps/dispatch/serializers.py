@@ -1,7 +1,8 @@
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
-from .models import PartsSourcingRequest, ServiceRequest, ServiceStatus, ServiceType
+from .models import PartsSourcingRequest, Review, ServiceRequest, ServiceStatus, ServiceType
+from .services.fare import estimate_fare
 
 
 def _point_to_dict(point):
@@ -70,12 +71,16 @@ def build_service_request(*, customer, validated_data) -> ServiceRequest:
     dropoff = None
     if validated_data.get("dropoff_lat") is not None:
         dropoff = Point(validated_data["dropoff_lng"], validated_data["dropoff_lat"], srid=4326)
+    service_type = validated_data["service_type"]
     return ServiceRequest.objects.create(
         customer=customer,
-        service_type=validated_data["service_type"],
+        service_type=service_type,
         pickup_location=pickup,
         dropoff_location=dropoff,
         problem_description=validated_data.get("problem_description"),
+        # Phase 4 (PLAN.md §5.2): OSRM/Haversine for RECOVERY, flat
+        # FARE_BASE_FEE for MECHANIC (no dropoff to price a distance from).
+        estimated_fare=estimate_fare(service_type=service_type, pickup=pickup, dropoff=dropoff),
     )
 
 
@@ -100,3 +105,15 @@ class PartsSourcingRequestApproveSerializer(serializers.Serializer):
 
 class PartsSourcingRequestOrderSerializer(serializers.Serializer):
     delivery_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class ReviewCreateSerializer(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    comment = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ["id", "service_request", "customer", "rating", "comment", "created_at"]
+        read_only_fields = fields

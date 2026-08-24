@@ -1,6 +1,7 @@
-"""Payment initiation, generic over `order=`/`service_request=` so
-Phase 4's `/service-requests/{id}/pay` can call this same function with
-`service_request=` instead of `order=` — no rework needed then."""
+"""Payment initiation, generic over `order=`/`service_request=` — Phase 4's
+`/service-requests/{id}/pay` (apps/dispatch/views.py) calls this same
+function with `service_request=` instead of `order=`, now that the fare
+engine (PLAN.md §5.2) populates `estimated_fare`/`final_fare`."""
 
 from django.conf import settings
 from rest_framework import serializers
@@ -17,10 +18,7 @@ def initiate_payment(*, user, payment_method, order=None, service_request=None):
 
     amount = order.total_amount if order else service_request.final_fare or service_request.estimated_fare
     if amount is None:
-        # Phase 4 territory: the OSRM/Haversine fare engine (PLAN.md §5.2)
-        # is what actually populates estimated_fare/final_fare — until
-        # then a service_request has no fare to charge.
-        raise NotImplementedError("service_request fare calculation is wired up in Phase 4.")
+        raise serializers.ValidationError("This service request has no fare to charge yet.")
 
     provider_gateway = select_gateway(payment_method)
     payment = Payment.objects.create(
@@ -38,7 +36,16 @@ def initiate_payment(*, user, payment_method, order=None, service_request=None):
     payment.save(update_fields=["transaction_ref"])
 
     client = get_gateway_client(provider_gateway)
-    redirect_url = f"{settings.FRONTEND_BASE_URL}/checkout/complete?order_id={order.id}"
+    # Phase 4: service_request has no /checkout/complete-style page of its
+    # own yet (web/'s Phase 4 tracking page is `/track/{id}`, not a
+    # payment-completion page) — reuse the same query-string shape with a
+    # `service_request_id` key instead of `order_id` so a future page can
+    # tell the two apart without a different route.
+    redirect_target = order.id if order else service_request.id
+    redirect_param = "order_id" if order else "service_request_id"
+    redirect_url = (
+        f"{settings.FRONTEND_BASE_URL}/checkout/complete?{redirect_param}={redirect_target}"
+    )
     result = client.initiate_checkout(payment=payment, redirect_url=redirect_url)
 
     if result.gateway_transaction_id:

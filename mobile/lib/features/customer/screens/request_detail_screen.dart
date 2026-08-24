@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/autoserve_api.dart';
@@ -23,6 +24,14 @@ final _partsRequestsProvider =
 /// apps/dispatch/services/transitions.py's ALLOWED_TRANSITIONS.
 bool _isCancellable(ServiceStatus status) =>
     status != ServiceStatus.completed && status != ServiceStatus.cancelled;
+
+/// Phase 4 (PLAN.md §5.2): tracking is only meaningful once a provider is
+/// actively working the job — before ACCEPTED there's no one to track,
+/// after COMPLETED/CANCELLED there's nothing live left to show.
+bool _isTrackable(ServiceStatus status) => switch (status) {
+      ServiceStatus.accepted || ServiceStatus.enRoute || ServiceStatus.inProgress => true,
+      _ => false,
+    };
 
 class RequestDetailScreen extends ConsumerWidget {
   const RequestDetailScreen({super.key, required this.requestId});
@@ -100,6 +109,14 @@ class _RequestDetailBody extends ConsumerWidget {
           const SizedBox(height: 16),
           Text('Drop-off', style: Theme.of(context).textTheme.labelLarge),
           Text('${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}'),
+        ],
+        if (_isTrackable(sr.status)) ...[
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: () => context.push('/customer/tracking/${sr.id}'),
+            icon: const Icon(Icons.map),
+            label: const Text('Track live location'),
+          ),
         ],
         if (_isCancellable(sr.status)) ...[
           const SizedBox(height: 24),

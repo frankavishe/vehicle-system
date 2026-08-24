@@ -29,7 +29,11 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
+    # Phase 4: swapped from `runserver` to daphne (Django Channels' own
+    # ASGI server) — one process now serves both the existing DRF/HTTP
+    # surface and the new WebSocket tracking consumer (config/asgi.py's
+    # ProtocolTypeRouter), rather than running two separate servers.
+    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
     volumes:
       - ../backend:/app
     ports:
@@ -56,8 +60,40 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    # No celery_beat service this phase (flagged deferral) — no periodic
-    # task exists until Phase 4's weekly payouts batch (PLAN.md §5.5).
+
+  celery_beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    # Phase 4: the previously-deferred periodic-task runner — currently
+    # drives only the weekly provider payout batch (PLAN.md §5.5,
+    # config/celery.py's CELERY_BEAT_SCHEDULE). A separate process/
+    # container from celery_worker per Celery's own recommendation (beat
+    # only schedules; worker executes).
+    command: celery -A config beat -l info
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ../backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # Phase 4: self-hosted routing engine for the RECOVERY fare engine
+  # (PLAN.md §5.2) — Haversine is the fallback whenever this is
+  # unreachable or has no route, so the app works before the one-time
+  # data-prep step below is done. See infra/osrm/README.md for it; this
+  # service alone (no volume prepared yet) will just sit unreachable,
+  # which is the intended, harmless starting state.
+  osrm:
+    image: osrm/osrm-backend:v5.27.1
+    command: osrm-routed --algorithm mld /data/tanzania-latest.osrm
+    volumes:
+      - ../infra/osrm/data:/data
+    ports:
+      - "5001:5000"
 
   web:
     build:
