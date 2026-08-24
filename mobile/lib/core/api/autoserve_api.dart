@@ -46,7 +46,7 @@ class AutoserveApi {
 
   Future<ProviderDocumentDto> uploadDocument({required String filePath, String? docType}) async {
     final form = FormData.fromMap({
-      if (docType != null) 'doc_type': docType,
+      'doc_type': ?docType,
       'file': await MultipartFile.fromFile(filePath),
     });
     final response = await _dio.post('/providers/me/documents', data: form);
@@ -81,9 +81,9 @@ class AutoserveApi {
       'service_type': serviceType == ServiceType.mechanic ? 'MECHANIC' : 'RECOVERY',
       'pickup_lat': pickupLat,
       'pickup_lng': pickupLng,
-      if (dropoffLat != null) 'dropoff_lat': dropoffLat,
-      if (dropoffLng != null) 'dropoff_lng': dropoffLng,
-      if (problemDescription != null) 'problem_description': problemDescription,
+      'dropoff_lat': ?dropoffLat,
+      'dropoff_lng': ?dropoffLng,
+      'problem_description': ?problemDescription,
     });
     return ServiceRequestDto.fromJson(response.data as Map<String, dynamic>);
   }
@@ -151,7 +151,7 @@ class AutoserveApi {
   Future<String> convertPartsRequestToOrder(String id, {String? deliveryAddress}) async {
     final response = await _dio.post(
       '/parts-requests/$id/order',
-      data: {if (deliveryAddress != null) 'delivery_address': deliveryAddress},
+      data: {'delivery_address': ?deliveryAddress},
     );
     return response.data['order_id'] as String;
   }
