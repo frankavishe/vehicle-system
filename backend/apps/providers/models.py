@@ -33,3 +33,27 @@ class ProviderProfile(UUIDModel):
 
     def __str__(self):
         return f"ProviderProfile<{self.user.full_name}>"
+
+
+class ProviderDocument(UUIDModel):
+    """Matches PLAN.md §3.2's `provider_documents` table, with one
+    deliberate deviation: `file_url TEXT NOT NULL` is modeled as a real
+    `FileField`, not a "paste a URL" field — Flutter needs actual
+    multipart upload for certification docs, not a link. The serializer
+    exposes `.file.url` as `file_url` to keep the wire shape matching the
+    plan's column name."""
+
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="documents"
+    )
+    doc_type = models.CharField(max_length=50, null=True, blank=True)
+    file = models.FileField(upload_to="provider_documents/%Y/%m/")
+    verified = models.BooleanField(default=False)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "provider_documents"
+        ordering = ["-uploaded_at"]
+
+    def __str__(self):
+        return f"ProviderDocument<{self.provider_id}, {self.doc_type}>"

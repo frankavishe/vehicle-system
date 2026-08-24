@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import ProviderProfile
+from .models import ProviderDocument, ProviderProfile
 
 
 class ProviderAvailabilitySerializer(serializers.ModelSerializer):
@@ -22,3 +22,20 @@ class ProviderLocationSerializer(serializers.ModelSerializer):
         if obj.current_location is None:
             return None
         return {"lat": obj.current_location.y, "lng": obj.current_location.x}
+
+
+class ProviderDocumentSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(write_only=True)
+    file_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = ProviderDocument
+        fields = ["id", "doc_type", "file", "file_url", "verified", "uploaded_at"]
+        read_only_fields = ["id", "file_url", "verified", "uploaded_at"]
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        request = self.context.get("request")
+        url = obj.file.url
+        return request.build_absolute_uri(url) if request else url

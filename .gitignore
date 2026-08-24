@@ -63,3 +63,4 @@ infra/.env
 !web/README.md
 !web/AGENTS.md
 !web/CLAUDE.md
+!mobile/README.md

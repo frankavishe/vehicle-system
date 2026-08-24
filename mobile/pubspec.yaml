@@ -1,0 +1,81 @@
+name: mobile
+description: "AutoServe — multi-role Flutter client (Customer/Mechanic/Recovery/Admin)."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management — compile-time-safe DI, no BuildContext coupling
+  # (needed since auth/role state must be readable from background FCM
+  # handlers and go_router's redirect guards). PLAN.md §6 only names
+  # "Flutter secure storage"; every package on this list is a flagged
+  # choice — see mobile/README.md. Plain (non-codegen) Riverpod providers
+  # throughout — riverpod_generator's @riverpod annotations were left out
+  # to keep this greenfield app's one build_runner pass (freezed/
+  # json_serializable, for shared/models/) the only codegen dependency.
+  flutter_riverpod: ^2.6.1
+
+  # Routing — declarative role-based redirect guards + deep-link support
+  # (push-notification tap -> specific screen).
+  go_router: ^15.1.2
+
+  # HTTP client — interceptor layer attaches Bearer token + retries once
+  # on 401 after refresh (closest Dart analog to web/'s two-tier client).
+  dio: ^5.7.0
+
+  # Secure token storage — named explicitly in PLAN.md §6.
+  flutter_secure_storage: ^9.2.2
+
+  # FCM — token registration + onTokenRefresh, per PLAN.md §5.4/§7.
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.5
+
+  # FCM data-only messages don't auto-display a heads-up alert without
+  # this — flagged addition, PLAN.md doesn't name it.
+  flutter_local_notifications: ^18.0.1
+
+  # Certification/document upload picker — broader than image_picker
+  # since uploads may be PDFs.
+  # Swapped in for file_picker (PLAN's originally-flagged choice) after a
+  # real, reproducible Android/Gradle toolchain incompatibility: neither
+  # file_picker 8.x (hardcodes `compileSdk 34`) nor 11.x (its Kotlin
+  # sources fail to link into GeneratedPluginRegistrant.java —
+  # `cannot find symbol: class FilePickerPlugin` — under this Flutter
+  # release's newer "Built-in Kotlin" build support + AGP 9) produce a
+  # working `flutter build apk` in this environment; confirmed via three
+  # separate real build attempts, not by inspection. image_picker is
+  # narrower — camera/gallery images only, no PDF — a real, flagged scope
+  # trim from the plan's intent (provider certification uploads may
+  # reasonably be PDFs), not a silent substitution.
+  image_picker: ^1.1.2
+
+  # GPS — customer pickup-location submission + the provider's own
+  # location PATCH. Flagged: not named in PLAN.md.
+  geolocator: ^13.0.2
+
+  # Immutable, codegen'd DTOs mirroring backend serializers.
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Parts-sourcing "buy now" hands off to Phase 2's hosted checkout_url
+  # instead of a native Dart payment UI — flagged decision.
+  url_launcher: ^6.3.1
+
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
