@@ -119,6 +119,52 @@ period — independent of the live dispatch view and the fare estimator.
   distinction visible (cancelled ≠ completed) rather than showing 0 with
   no context.
 
+## Clarifications
+
+### Session 2026-08-28 (surfaced during `/speckit-plan`)
+
+Per the constitution's Principle III ("Frontend-Onto-Existing-Backend"), a
+new backend surface may only be added once the gap is documented here,
+with why reuse isn't possible. Planning found exactly one:
+
+- **Q: FR-007 needs a selectable-period, per-driver aggregate (completed
+  tow count, average rating, typical response time). The only existing
+  aggregate view (`GET /admin/analytics`, `apps/admin_ops`) is
+  `IsAdmin`-only, un-scoped to a single provider, and not
+  period-filterable; `provider_profiles.rating` (`apps/providers`) is a
+  lifetime running average with no period dimension; and no endpoint
+  lists a provider's own `Review` rows to aggregate client-side.
+  Reuse isn't possible as-is; how should the operator get this data?**
+  **A**: Add one new self-scoped endpoint, `GET /providers/me/performance`
+  (query params `period_start`/`period_end`), gated `IsRecovery`,
+  filtered to `provider=request.user`. It reuses the existing
+  `ServiceRequest`/`Review` models unchanged for the count and rating
+  aggregation. Response time additionally needs two new nullable
+  `DateTimeField` columns on `ServiceRequest` — `accepted_at` (set in
+  `ServiceRequestAcceptView`, alongside the existing status flip) and
+  `completed_at` (set in `ServiceRequestStatusUpdateView`'s COMPLETED
+  branch, alongside the existing `final_fare` finalization) — since no
+  existing column records when a job was accepted or completed. Per
+  FR-008, the response distinguishes zero completed tows from zero data
+  by also reporting the period's cancelled-tow count, so an
+  all-cancelled period reads as "0 completed, N cancelled" rather than a
+  bare, context-free zero.
+
+No other gap was found: the multi-tow dispatch view (Story 1) reuses
+`GET /service-requests` (already filters to `provider=request.user` for
+the RECOVERY role) plus the existing per-job tracking WebSocket
+(`apps/tracking`) for live status/position, filtered/rendered
+client-side to active jobs — mirroring the multi-marker pattern already
+built for `GET /admin/map`. The fare estimate (Story 2) reuses
+`estimated_fare`/`final_fare`, already computed at request-creation time
+(`apps/dispatch/services/fare.py`) and already present on
+`ServiceRequestSerializer` — visible pre-acceptance via the existing
+same-type-provider-while-PENDING visibility rule in
+`_get_visible_service_request`. The "verified recovery account" gate in
+FR-001 reuses the existing `GET /users/me` (`is_verified` is already one
+of `MeSerializer`'s fields), matching 001-mechanic-web-portal's
+precedent.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
