@@ -2,7 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/models/app_user.dart';
+import '../../shared/models/cart_dto.dart';
 import '../../shared/models/notification_item.dart';
+import '../../shared/models/order_dto.dart';
+import '../../shared/models/order_shipment_dto.dart';
 import '../../shared/models/parts_sourcing_request.dart';
 import '../../shared/models/provider_document.dart';
 import '../../shared/models/service_request.dart';
@@ -108,16 +111,114 @@ class AutoserveApi {
     return ServiceRequestDto.fromJson(response.data as Map<String, dynamic>);
   }
 
-  // --- Catalog (read-only lookup for the parts-sourcing picker) ---
+  // --- Catalog (browse — used by both the shop screens and the
+  // mechanic's parts-request picker) ---
   // No free-text search filter exists on GET /parts (apps/catalog/filters.py
-  // only supports make/model/category/year) — fetches the first page and
-  // filters client-side by title. Flagged simplification: fine at this
-  // project's catalog scale, not a real search experience.
-  Future<List<SparePartSummary>> browseSpareParts() async {
-    final response = await _dio.get('/parts');
+  // only supports make/model/category/year) — the shop screen filters
+  // client-side by title on top of these server-side filters. Flagged
+  // simplification: fine at this project's catalog scale, not a real
+  // search experience.
+  Future<List<SparePartSummary>> browseSpareParts({
+    String? make,
+    String? model,
+    String? category,
+    int? year,
+  }) async {
+    final response = await _dio.get('/parts', queryParameters: {
+      'make': ?make,
+      'model': ?model,
+      'category': ?category,
+      'year': ?year,
+    });
     final data = response.data;
     final results = data is Map ? data['results'] as List : data as List;
     return results.map((e) => SparePartSummary.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<SparePartSummary> getSparePart(String id) async {
+    final response = await _dio.get('/parts/$id');
+    return SparePartSummary.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Distinct compatible_make/compatible_model values, for populating the
+  /// shop screen's compatibility-search filters.
+  Future<({List<String> makes, List<String> models})> getPartsFacets({String? make}) async {
+    final response = await _dio.get('/parts/facets', queryParameters: {'make': ?make});
+    final data = response.data as Map<String, dynamic>;
+    return (
+      makes: (data['makes'] as List).cast<String>(),
+      models: (data['models'] as List).cast<String>(),
+    );
+  }
+
+  // --- Cart ---
+  Future<CartDto> getCart() async {
+    final response = await _dio.get('/cart');
+    return CartDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// POST /cart/items upserts (adds to an existing line's quantity rather
+  /// than erroring) — the backend returns just the affected CartItem, so
+  /// callers refetch getCart() to see the updated running total.
+  Future<CartItemDto> addToCart({required String sparePartId, int quantity = 1}) async {
+    final response = await _dio.post('/cart/items', data: {
+      'spare_part_id': sparePartId,
+      'quantity': quantity,
+    });
+    return CartItemDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<CartItemDto> updateCartItem(String id, int quantity) async {
+    final response = await _dio.patch('/cart/items/$id', data: {'quantity': quantity});
+    return CartItemDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> removeCartItem(String id) => _dio.delete('/cart/items/$id');
+
+  // --- Orders (customer-initiated checkout, distinct from the mechanic's
+  // parts-sourcing "order" below) ---
+  Future<List<OrderDto>> listOrders() async {
+    final response = await _dio.get('/orders');
+    return (response.data as List)
+        .map((e) => OrderDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<OrderDto> getOrder(String id) async {
+    final response = await _dio.get('/orders/$id');
+    return OrderDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Checks out the customer's current cart into a new Order — the cart
+  /// itself supplies the line items server-side.
+  Future<OrderDto> checkout({required String deliveryAddress}) async {
+    final response = await _dio.post('/orders', data: {'delivery_address': deliveryAddress});
+    return OrderDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<OrderDto> cancelOrder(String id) async {
+    final response = await _dio.post('/orders/$id/cancel');
+    return OrderDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// Returns the gateway's hosted checkout page URL — the caller hands
+  /// this to url_launcher, same "no native payment UI" pattern as
+  /// convertPartsRequestToOrder below.
+  Future<String> payOrder(String id, PaymentMethod method) async {
+    final response = await _dio.post('/orders/$id/pay', data: {'payment_method': method.wireValue});
+    return response.data['checkout_url'] as String;
+  }
+
+  /// Returns null on a 404 — no shipment exists until an admin has
+  /// dispatched the order (apps/orders/views.py's OrderShipmentView).
+  Future<OrderShipmentDto?> getOrderShipment(String id) async {
+    try {
+      final response = await _dio.get('/orders/$id/shipment');
+      return OrderShipmentDto.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   // --- Parts sourcing ---

@@ -8,6 +8,11 @@ import '../../features/customer/screens/customer_shell.dart';
 import '../../features/customer/screens/request_detail_screen.dart';
 import '../../features/provider/screens/provider_job_detail_screen.dart';
 import '../../features/provider/screens/provider_shell.dart';
+import '../../features/shop/screens/cart_screen.dart';
+import '../../features/shop/screens/checkout_screen.dart';
+import '../../features/shop/screens/my_orders_screen.dart';
+import '../../features/shop/screens/order_detail_screen.dart';
+import '../../features/shop/screens/part_detail_screen.dart';
 import '../../features/tracking/screens/tracking_screen.dart';
 import '../auth/auth_state.dart';
 
@@ -93,6 +98,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'tracking/:id',
             builder: (context, state) =>
                 TrackingScreen(requestId: state.pathParameters['id']!),
+          ),
+          // Shop — the customer's native e-commerce flow. The listing
+          // itself is a shell tab (ShopScreen); everything past it is a
+          // pushed route, same as requests/:id and tracking/:id above.
+          GoRoute(
+            path: 'shop/:id',
+            builder: (context, state) =>
+                PartDetailScreen(partId: state.pathParameters['id']!),
+          ),
+          GoRoute(path: 'cart', builder: (context, state) => const CartScreen()),
+          GoRoute(path: 'checkout', builder: (context, state) => const CheckoutScreen()),
+          GoRoute(path: 'orders', builder: (context, state) => const MyOrdersScreen()),
+          GoRoute(
+            path: 'orders/:id',
+            builder: (context, state) =>
+                OrderDetailScreen(orderId: state.pathParameters['id']!),
           ),
         ],
       ),
