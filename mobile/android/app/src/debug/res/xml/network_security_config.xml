@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-build-only override. Android 9+ (API 28+) blocks plain HTTP by
+  default (NetworkSecurityConfig cleartext policy) — that silently killed
+  every dio call the app made, since ApiConfig.baseUrl (api_config.dart)
+  points at a plain http:// URL for local development against the Django
+  backend, which doesn't run TLS locally: the Android emulator's
+  host-loopback alias by default, or a LAN IP / localhost per an
+  API_BASE_URL override (see mobile/README.md) for a real device or the
+  iOS simulator. The request never left the device: dio surfaced it as a
+  generic connection error indistinguishable from a bad password, and
+  nothing ever reached the backend's access log.
+
+  Cleartext is allowed for ALL hosts here rather than an emulator-only
+  allowlist, since which host is in play depends on that override.
+  Only merged into the debug variant (src/debug/) — release builds keep
+  Android's secure default and are unaffected.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

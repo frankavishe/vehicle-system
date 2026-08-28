@@ -15,21 +15,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "phone", "full_name", "role", "password"]
         read_only_fields = ["id"]
+        # DRF's auto-generated UniqueValidator runs on the raw input value,
+        # before validate_phone below normalizes it — so "0712345678" would
+        # sail past uniqueness even though it normalizes to an already-used
+        # "255712345678", and the create_user() call would then crash with
+        # an unhandled IntegrityError. Uniqueness is checked manually below,
+        # post-normalization, instead.
+        extra_kwargs = {"phone": {"validators": []}}
 
     def validate_phone(self, value):
         try:
             normalized = normalize_tz_phone(value)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.message) from exc
-        # DRF's auto-generated UniqueValidator (from the model's
-        # unique=True) already ran on the raw, un-normalized `value` before
-        # this method — so e.g. "0798765432" and "255798765432" (the same
-        # number in two formats) both sail through it. Re-check uniqueness
-        # here, against the normalized form that's actually saved, so a
-        # genuine duplicate is a clean 400 instead of an unhandled
-        # IntegrityError (500) from the DB constraint.
         if User.objects.filter(phone=normalized).exists():
-            raise serializers.ValidationError("This phone number is already registered.")
+            raise serializers.ValidationError("A user with this phone number already exists.")
         return normalized
 
     def validate_password(self, value):
