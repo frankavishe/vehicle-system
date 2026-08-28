@@ -18,9 +18,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_phone(self, value):
         try:
-            return normalize_tz_phone(value)
+            normalized = normalize_tz_phone(value)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.message) from exc
+        # DRF's auto-generated UniqueValidator (from the model's
+        # unique=True) already ran on the raw, un-normalized `value` before
+        # this method — so e.g. "0798765432" and "255798765432" (the same
+        # number in two formats) both sail through it. Re-check uniqueness
+        # here, against the normalized form that's actually saved, so a
+        # genuine duplicate is a clean 400 instead of an unhandled
+        # IntegrityError (500) from the DB constraint.
+        if User.objects.filter(phone=normalized).exists():
+            raise serializers.ValidationError("This phone number is already registered.")
+        return normalized
 
     def validate_password(self, value):
         try:
