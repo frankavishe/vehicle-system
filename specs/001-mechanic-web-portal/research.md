@@ -106,6 +106,18 @@ existing REST `PATCH .../status`, same as the mobile app.
   backend check, since the backend doesn't currently reject by status
   here and adding that check is out of scope for a portal-only feature).
 
+## Addendum (found during `/speckit-implement`): `ProviderAvailabilityView` needed a GET
+
+FR-002 ("view and toggle") needs to *read* current availability before
+the dashboard renders a toggle; `ProviderAvailabilityView` was PATCH-only.
+Fixed by adding a `get()` method to that same view (same file, same
+serializer, same `IsProvider` gate) — not a new endpoint, completing an
+existing one's HTTP methods, exactly the "flagged addition" precedent
+`ProviderDocumentListCreateView`'s own GET already set. No Clarifications
+entry needed (Principle III's gate is about new *surfaces*; this is the
+narrower "existing endpoint was missing a verb" case), but recorded here
+since it wasn't caught during planning.
+
 ## Note: Constitution's stated Next.js version is stale
 
 The constitution (Principle I) says "Next.js 14 App Router"; the running

@@ -11,6 +11,7 @@ same-origin proxy that attaches the Bearer token — see
 | Method | Path | Used for | Role gate |
 |---|---|---|---|
 | GET | `/users/me` | Verification gate in `mechanic/layout.tsx` (`is_verified`) | any authenticated user |
+| GET | `/providers/me/availability` | Read current online/offline state before rendering the toggle (Story 1, FR-002) — flagged addition, see research.md addendum | `IsMechanic`/`IsProvider` |
 | PATCH | `/providers/me/availability` | Online/offline toggle (Story 1, FR-002) | `IsMechanic`/`IsProvider` |
 | GET | `/service-requests?status=` | Job queue (no/`PENDING`/`ACCEPTED`/`EN_ROUTE`/`IN_PROGRESS`) and history (`COMPLETED`) (Stories 1–2, FR-003/FR-006) | authenticated, server-side scoped |
 | GET | `/service-requests/{id}` | Job detail (Story 1) | authenticated, server-side scoped |
@@ -39,30 +40,43 @@ removal from the visible queue for the current session (see research.md
   dates) — filters `Payout.created_at` (or `period_start`/`period_end`
   overlap, implementer's choice consistent with how `AdminPayoutListView`
   would filter) between the two.
-- **Response 200**: same shape as `PayoutSerializer` (existing,
-  `apps/admin_ops/serializers.py`), as a list:
+- **Response 200**: `generics.ListAPIView` inherits the project's global
+  `DEFAULT_PAGINATION_CLASS` (`PageNumberPagination`, `PAGE_SIZE=20` —
+  `config/settings/base.py`), same as `AdminPayoutListView` — so the
+  body is the standard paginated envelope
+  (`{count, next, previous, results}`), not a bare array. Every item in
+  `results` has `PayoutSerializer`'s existing shape:
 
 ```json
-[
-  {
-    "id": "uuid",
-    "provider": "uuid",
-    "amount": "125000.00",
-    "period_start": "2026-08-01T00:00:00Z",
-    "period_end": "2026-08-07T23:59:59Z",
-    "is_manual": false,
-    "provider_gateway": "SELCOM",
-    "gateway_transaction_id": "txn_...",
-    "status": "PAID",
-    "created_at": "2026-08-08T02:00:00Z",
-    "paid_at": "2026-08-08T02:00:15Z",
-    "items": [
-      { "id": "uuid", "service_request": "uuid", "amount": "80000.00" },
-      { "id": "uuid", "service_request": "uuid", "amount": "45000.00" }
-    ]
-  }
-]
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "uuid",
+      "provider": "uuid",
+      "amount": "125000.00",
+      "period_start": "2026-08-01T00:00:00Z",
+      "period_end": "2026-08-07T23:59:59Z",
+      "is_manual": false,
+      "provider_gateway": "SELCOM",
+      "gateway_transaction_id": "txn_...",
+      "status": "PAID",
+      "created_at": "2026-08-08T02:00:00Z",
+      "paid_at": "2026-08-08T02:00:15Z",
+      "items": [
+        { "id": "uuid", "service_request": "uuid", "amount": "80000.00" },
+        { "id": "uuid", "service_request": "uuid", "amount": "45000.00" }
+      ]
+    }
+  ]
+}
 ```
+
+  A frontend caller unwraps `.results`, exactly as
+  `web/src/app/admin/payouts/page.tsx` already does for
+  `GET /admin/payouts`.
 
 - **Queryset**: `Payout.objects.filter(provider=request.user)
   .select_related("provider").prefetch_related("items")` — same

@@ -5,6 +5,18 @@ from rest_framework import status
 pytestmark = pytest.mark.django_db
 
 
+def test_mechanic_can_view_current_availability(auth_client, mechanic_user):
+    """Flagged addition (specs/001-mechanic-web-portal) — the web
+    portal's dashboard needs to render the current on/off state before
+    toggling it."""
+    mechanic_user.provider_profile.is_available = True
+    mechanic_user.provider_profile.save()
+    client = auth_client(mechanic_user)
+    response = client.get(reverse("provider-availability"))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["is_available"] is True
+
+
 def test_mechanic_can_toggle_availability(auth_client, mechanic_user):
     client = auth_client(mechanic_user)
     url = reverse("provider-availability")

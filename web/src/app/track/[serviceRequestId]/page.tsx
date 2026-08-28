@@ -43,7 +43,13 @@ export default async function TrackServiceRequestPage({
           </h1>
           <span className="text-sm text-steel-soft">Requested {formatDate(serviceRequest.created_at)}</span>
         </div>
-        <ServiceRequestStatusBadge status={serviceRequest.status} />
+        {/* Once TrackingMapClientOnly mounts below, it renders the live,
+            WebSocket-updated status badge itself (contracts/websocket.md)
+            — showing this static one too would just be a second,
+            never-updating badge next to it. */}
+        {(!serviceRequest.provider || !accessToken) && (
+          <ServiceRequestStatusBadge status={serviceRequest.status} />
+        )}
       </div>
 
       {!serviceRequest.provider ? (
@@ -60,6 +66,7 @@ export default async function TrackServiceRequestPage({
           pickup={serviceRequest.pickup_location}
           dropoff={serviceRequest.dropoff_location}
           isProvider={isProvider}
+          initialStatus={serviceRequest.status}
         />
       )}
 

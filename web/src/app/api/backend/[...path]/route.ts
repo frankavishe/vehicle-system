@@ -16,13 +16,22 @@ async function proxy(request: NextRequest, path: string[]): Promise<NextResponse
   const hasBody = !["GET", "HEAD", "DELETE"].includes(request.method);
   const url = `${API_BASE}/${path.join("/")}${request.nextUrl.search}`;
 
+  // Forward the caller's actual Content-Type (falling back to JSON only
+  // when none was set) rather than hardcoding "application/json" — a
+  // multipart upload (e.g. web/src/components/mechanic/DocumentUploadList.tsx
+  // -> POST /providers/me/documents) needs its own Content-Type,
+  // boundary included, or Django's MultiPartParser can't parse it. The
+  // body is forwarded as a raw ArrayBuffer rather than decoded `.text()`
+  // so binary file bytes survive the proxy unchanged.
+  const contentType = request.headers.get("content-type") ?? "application/json";
+
   const res = await fetch(url, {
     method: request.method,
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": contentType,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: hasBody ? await request.text() : undefined,
+    body: hasBody ? await request.arrayBuffer() : undefined,
     cache: "no-store",
   });
 

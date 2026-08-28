@@ -190,6 +190,40 @@ export interface Payout {
   items: PayoutItem[];
 }
 
+// --- Mechanic web portal ---
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  phone: string;
+  full_name: string;
+  role: UserRole;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+}
+
+export interface ProviderDocument {
+  id: string;
+  doc_type: string | null;
+  file_url: string;
+  verified: boolean;
+  uploaded_at: string;
+}
+
+export type PartsSourcingStatus = "PENDING" | "APPROVED" | "REJECTED" | "ORDERED";
+
+export interface PartsSourcingRequest {
+  id: string;
+  service_request: string;
+  requested_by: string | null;
+  spare_part: string | null;
+  quantity: number;
+  status: PartsSourcingStatus;
+  order: string | null;
+  created_at: string;
+}
+
 export interface AdminAnalytics {
   orders_by_status: Record<string, number>;
   service_requests_by_status: Record<string, number>;
