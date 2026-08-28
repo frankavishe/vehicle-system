@@ -95,7 +95,12 @@ class ProviderPayoutListView(generics.ListAPIView):
         period_start = self.request.query_params.get("period_start")
         period_end = self.request.query_params.get("period_end")
         if period_start:
-            qs = qs.filter(created_at__gte=period_start)
+            qs = qs.filter(created_at__date__gte=period_start)
         if period_end:
-            qs = qs.filter(created_at__lte=period_end)
+            # __date__lte (not __lte) — a bare date string compared against
+            # a DateTimeField would mean "before midnight at the *start* of
+            # period_end", silently excluding every payout created later
+            # that same day (found via manual QA: today's seeded payout
+            # vanished from its own default 30-day-ending-today range).
+            qs = qs.filter(created_at__date__lte=period_end)
         return qs
