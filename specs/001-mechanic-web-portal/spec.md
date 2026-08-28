@@ -122,6 +122,63 @@ the other stories.
 - What happens when a mechanic has never completed a job? Earnings/history
   MUST show a clear zero/empty state, not a broken chart or error.
 
+## Clarifications
+
+### Session 2026-08-28 (surfaced during `/speckit-plan`)
+
+Per the constitution's Principle III ("Frontend-Onto-Existing-Backend"), a
+new backend surface may only be added once the gap is documented here,
+with why reuse isn't possible. Planning found exactly two:
+
+- **Q: FR-007 needs each mechanic's own earnings/payouts. The only
+  existing payout read endpoint (`GET /admin/payouts`,
+  `apps/admin_ops`) is `IsAdmin`-only — an admin-wide list, not
+  self-scoped. Reuse isn't possible as-is; how should the mechanic
+  read their own payouts?**
+  **A**: Add one new self-scoped endpoint, `GET /providers/me/payouts`,
+  following the exact precedent already set by
+  `GET /providers/me/documents` (a "flagged addition" self-scoped GET
+  next to an admin-only equivalent, `apps/providers/views.py`). It
+  reuses the existing `Payout`/`PayoutItem` models and
+  `PayoutSerializer` (`apps/admin_ops`) unchanged, filtered to
+  `provider=request.user`, `IsMechanic`-gated (a mechanic's own record
+  only, per FR-011). No new model, no new admin-facing behavior.
+
+- **Q: FR-012/SC-002 need job status changes to reach the customer's
+  tracking view within 5s without a manual refresh. The existing
+  tracking WebSocket (`apps/tracking`, `ws://.../tracking/{id}/`,
+  already consumed by `web/src/app/track/[serviceRequestId]`) only
+  ever broadcasts a `location.update` event (provider lat/lng) — a
+  status change made via `PATCH /service-requests/{id}/status` or
+  `POST /service-requests/{id}/accept` today reaches the customer only
+  on their next full page load. Reuse isn't possible as-is (the
+  channel exists but the event doesn't); how should status changes
+  reach the open tracking view live?**
+  **A**: Extend the same already-open `tracking_{service_request_id}`
+  Channels group (no new channel, no new client connection) with a
+  second server-initiated event type, `status.update`, sent via
+  `channel_layer.group_send` (through `async_to_sync`, this codebase's
+  first sync→async Channels call, needed because
+  `ServiceRequestAcceptView`/`ServiceRequestStatusUpdateView` are
+  regular sync DRF views) whenever those views change `.status`. The
+  customer's already-connected tracking socket handles the new event
+  type the same way it already handles `location_update`. Declining a
+  job is not part of this: it stays a client-side dismissal (no
+  backend "declined" state exists or is added — a declined job simply
+  remains `PENDING` and continues to be offered to every other
+  matching mechanic, which is already how `GET /service-requests`
+  filters for the `MECHANIC` role today).
+
+No other gap was found: job list/history reuses
+`GET /service-requests` (already filters to `provider=request.user`
+for the MECHANIC role); parts-sourcing reuses
+`apps/dispatch`'s existing `parts-requests` endpoints unchanged;
+certification uploads reuse `apps/providers`'s existing
+`provider_documents` endpoints unchanged; and the "verified mechanic
+account" gate in FR-001 reuses the existing `GET /users/me`
+(`is_verified` is already one of `MeSerializer`'s fields) rather than
+adding a JWT claim.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
