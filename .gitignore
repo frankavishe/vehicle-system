@@ -40,6 +40,9 @@ mobile/**/android/.gradle/
 .DS_Store
 Thumbs.db
 
+# --- Claude Code local runtime state (not source) ---
+.claude/scheduled_tasks.lock
+
 # --- Docker ---
 infra/.env
 
@@ -67,6 +70,11 @@ infra/.env
 !web/AGENTS.md
 !web/CLAUDE.md
 !mobile/README.md
+# spec-kit artifacts (.specify/, specs/, .claude/skills/speckit-*) ARE
+# meant to be versioned/reviewed, unlike PLAN.md/phase.md/work.md above.
+!.specify/memory/constitution.md
+!specs/**/*.md
+!.claude/skills/**/*.md
 !infra/osrm/README.md
 
 # --- Phase 4: OSRM Tanzania extract — downloaded/processed locally per
