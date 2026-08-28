@@ -20,7 +20,7 @@ def test_mechanic_sees_only_their_own_payouts(auth_client, mechanic_user):
     assert response.status_code == status.HTTP_200_OK
     assert response.data["count"] == 1
     assert response.data["results"][0]["amount"] == "10000.00"
-    assert response.data["results"][0]["provider"] == str(mechanic_user.id)
+    assert response.data["results"][0]["provider"] == mechanic_user.id
 
 
 def test_mechanic_with_no_payouts_gets_empty_list(auth_client, mechanic_user):
