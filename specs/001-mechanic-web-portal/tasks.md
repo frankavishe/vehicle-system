@@ -123,8 +123,8 @@ existing single `backend/` Django project — no new project. See plan.md
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T029 [P] Run quickstart.md's full manual validation end-to-end (all three stories plus the two "Verifying the two new backend surfaces directly" pytest commands).
-- [ ] T030 [P] Spot-check FR-011 across every reused and new endpoint this feature touches (`/service-requests*`, `/providers/me/*`, `/parts-requests/*`) with a second mechanic account — confirm the first mechanic's jobs, earnings, documents, and parts requests never appear.
+- [ ] T029 [P] Run quickstart.md's full manual validation end-to-end (all three stories plus the two "Verifying the two new backend surfaces directly" pytest commands). Pytest half done — both suites pass (8/8; fixed a UUID-vs-str assertion bug in `test_payouts.py` along the way). The three manual browser story walkthroughs are still outstanding.
+- [X] T030 [P] Spot-check FR-011 across every reused and new endpoint this feature touches (`/service-requests*`, `/providers/me/*`, `/parts-requests/*`) with a second mechanic account — confirm the first mechanic's jobs, earnings, documents, and parts requests never appear. Automated as `backend/apps/dispatch/tests/test_fr011_mechanic_isolation.py` (5 tests, all passing).
 - [X] T031 Review loading/empty/error states across all `web/src/app/mechanic/**` pages for consistency with the existing `web/src/app/admin/**` conventions (spinners, empty-state copy, `ApiError` handling via `web/src/lib/api/errors.ts`).
 
 ---
