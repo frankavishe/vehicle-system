@@ -8,7 +8,8 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import type { LatLng } from "@/lib/types";
+import { ServiceRequestStatusBadge } from "@/components/tracking/ServiceRequestStatusBadge";
+import type { LatLng, ServiceRequestStatus } from "@/lib/types";
 
 // Custom dot markers instead of Leaflet's default pin image — sidesteps
 // the well-known "default marker icon 404s under a bundler" issue
@@ -50,6 +51,7 @@ export function TrackingMap({
   pickup,
   dropoff,
   isProvider,
+  initialStatus,
 }: {
   serviceRequestId: string;
   wsBaseUrl: string;
@@ -57,9 +59,11 @@ export function TrackingMap({
   pickup: LatLng;
   dropoff: LatLng | null;
   isProvider: boolean;
+  initialStatus: ServiceRequestStatus;
 }) {
   const [connection, setConnection] = useState<ConnectionState>("connecting");
   const [livePosition, setLivePosition] = useState<LatLng | null>(null);
+  const [status, setStatus] = useState(initialStatus);
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -82,8 +86,15 @@ export function TrackingMap({
       };
       socket.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as LatLng & { error?: string };
-          if (typeof data.lat === "number" && typeof data.lng === "number") {
+          const data = JSON.parse(event.data) as LatLng &
+            Partial<{ event: string; status: ServiceRequestStatus; error: string }>;
+          // status_update frames carry `event: "status_update"` and no
+          // lat/lng; location_update frames (the pre-existing shape) carry
+          // lat/lng and no `event` — checked first so existing behavior
+          // is untouched (contracts/websocket.md).
+          if (data.event === "status_update" && data.status) {
+            setStatus(data.status);
+          } else if (typeof data.lat === "number" && typeof data.lng === "number") {
             setLivePosition({ lat: data.lat, lng: data.lng });
           }
         } catch {
@@ -141,7 +152,10 @@ export function TrackingMap({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <Badge tone={statusTone}>{statusLabel}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge tone={statusTone}>{statusLabel}</Badge>
+          <ServiceRequestStatusBadge status={status} />
+        </div>
         {isProvider && (
           <Button
             variant={sharing ? "danger" : "primary"}

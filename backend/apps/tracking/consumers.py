@@ -77,6 +77,22 @@ class TrackingConsumer(AsyncJsonWebsocketConsumer):
             }
         )
 
+    async def status_update(self, event):
+        """Handler for the `status.update` group_send apps.dispatch's
+        ServiceRequestAcceptView/ServiceRequestStatusUpdateView emit on a
+        successful status change (see apps/dispatch/views.py's
+        `_broadcast_status_update`). Distinguished from `location_update`
+        on the wire by `event: "status_update"` with no `lat`/`lng`, so
+        existing clients that only ever expected `{lat, lng,
+        service_request_id}` aren't affected."""
+        await self.send_json(
+            {
+                "event": "status_update",
+                "status": event["status"],
+                "service_request_id": event["service_request_id"],
+            }
+        )
+
     @database_sync_to_async
     def _get_service_request(self, pk):
         sr = (

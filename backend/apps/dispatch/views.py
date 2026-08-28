@@ -1,3 +1,5 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db import models as django_models
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -36,6 +38,29 @@ from .services.transitions import is_transition_allowed, role_may_transition
 # model (services/parts_sourcing.py) so this import direction is
 # established, not new.
 from apps.orders.services.payments import initiate_payment
+
+
+def _broadcast_status_update(sr: ServiceRequest) -> None:
+    """Pushes a `status.update` event to the same `tracking_{id}` Channels
+    group `apps.tracking.consumers.TrackingConsumer` already uses for
+    `location.update` (PLAN.md §5.2). Additive: the customer's tracking
+    page (web/src/app/track/[serviceRequestId]) already holds this
+    connection open for position updates and now also listens for this
+    event, so a status change is visible there within seconds instead of
+    only on next page load (FR-012, SC-002 — see
+    specs/001-mechanic-web-portal/{spec.md Clarifications,
+    contracts/websocket.md}). `async_to_sync` is required here because
+    these are regular sync DRF views calling into Channels' async layer;
+    if no socket is connected for this group, `group_send` is a no-op —
+    this is a live-update enhancement, not the source of truth."""
+    async_to_sync(get_channel_layer().group_send)(
+        f"tracking_{sr.id}",
+        {
+            "type": "status.update",
+            "status": sr.status,
+            "service_request_id": str(sr.id),
+        },
+    )
 
 
 class ServiceRequestListCreateView(APIView):
@@ -149,6 +174,7 @@ class ServiceRequestAcceptView(APIView):
             )
 
         sr.refresh_from_db()
+        _broadcast_status_update(sr)
 
         from apps.notifications.models import NotificationCategory
         from apps.notifications.services.create import create_and_send
@@ -195,6 +221,7 @@ class ServiceRequestStatusUpdateView(APIView):
             sr.final_fare = sr.estimated_fare
             update_fields.append("final_fare")
         sr.save(update_fields=update_fields)
+        _broadcast_status_update(sr)
         return Response(ServiceRequestSerializer(sr).data)
 
 

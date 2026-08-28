@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-import type { LatLng } from "@/lib/types";
+import type { LatLng, ServiceRequestStatus } from "@/lib/types";
 
 // Leaflet touches `window` at import time, so this must never render on
 // the server — `ssr: false` is only usable from inside a Client
@@ -24,6 +24,7 @@ export function TrackingMapClientOnly(props: {
   pickup: LatLng;
   dropoff: LatLng | null;
   isProvider: boolean;
+  initialStatus: ServiceRequestStatus;
 }) {
   return <TrackingMap {...props} />;
 }
