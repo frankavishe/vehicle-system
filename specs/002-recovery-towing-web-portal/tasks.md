@@ -121,7 +121,7 @@ Web application, existing single projects (plan.md Structure Decision):
 
 - [X] T023 Wire nav links for `/recovery` (dispatch) and `/recovery/performance` into `web/src/app/recovery/layout.tsx`'s nav shell, if not already completed in T002
 - [X] T024 Run `pytest backend/apps/dispatch/tests/test_performance.py backend/apps/dispatch/tests/test_status_transitions.py` and confirm all pass
-- [ ] T025 Execute quickstart.md's full manual validation (Stories 1-3 scenarios plus the FR-009 second-operator isolation check)
+- [X] T025 Execute quickstart.md's full manual validation (Stories 1-3 scenarios plus the FR-009 second-operator isolation check)
 
 ---
 
