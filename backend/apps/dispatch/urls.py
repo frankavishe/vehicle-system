@@ -4,6 +4,7 @@ from .views import (
     PartsSourcingRequestApproveView,
     PartsSourcingRequestListCreateView,
     PartsSourcingRequestOrderView,
+    ProviderPerformanceView,
     ServiceRequestAcceptView,
     ServiceRequestDetailView,
     ServiceRequestListCreateView,
@@ -14,6 +15,10 @@ from .views import (
 
 urlpatterns = [
     path("service-requests", ServiceRequestListCreateView.as_view(), name="service-requests-list-create"),
+    # Co-located here, not apps/providers or apps/admin_ops — reads
+    # ServiceRequest+Review, mirrors where PartsSourcingRequest/Review
+    # already live relative to their source table (plan.md).
+    path("providers/me/performance", ProviderPerformanceView.as_view(), name="providers-me-performance"),
     path("service-requests/<uuid:pk>", ServiceRequestDetailView.as_view(), name="service-requests-detail"),
     path(
         "service-requests/<uuid:pk>/accept",

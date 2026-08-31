@@ -22,6 +22,10 @@ def test_mechanic_accepts_pending_request(auth_client, mechanic_user):
     sr.refresh_from_db()
     assert sr.provider == mechanic_user
     assert sr.status == ServiceStatus.ACCEPTED
+    # 002-recovery-towing-web-portal: accepted_at is set exactly once, at
+    # the accept transition (data-model.md), and never on creation.
+    assert sr.accepted_at is not None
+    assert sr.completed_at is None
     # A GENERAL notification fires on the customer.
     assert Notification.objects.filter(user=sr.customer, category="GENERAL").exists()
 

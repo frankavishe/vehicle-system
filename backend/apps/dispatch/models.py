@@ -50,6 +50,13 @@ class ServiceRequest(UUIDModel):
     estimated_fare = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     final_fare = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Write-once, set alongside the status flip that already happens in
+    # ServiceRequestAcceptView/ServiceRequestStatusUpdateView — no new
+    # write path, no new race condition beyond the ones those already
+    # resolve. Back GET /providers/me/performance's response-time figure
+    # (002-recovery-towing-web-portal spec.md Clarifications).
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "service_requests"

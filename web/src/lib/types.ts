@@ -143,6 +143,17 @@ export interface ServiceRequest {
   estimated_fare: string | null;
   final_fare: string | null;
   created_at: string;
+  accepted_at: string | null;
+  completed_at: string | null;
+}
+
+export interface ProviderPerformance {
+  period_start: string;
+  period_end: string;
+  completed_count: number;
+  cancelled_count: number;
+  average_rating: number | null;
+  average_response_time_seconds: number | null;
 }
 
 export interface ProviderMapEntry {

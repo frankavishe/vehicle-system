@@ -1,14 +1,19 @@
+from datetime import timedelta
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db import models as django_models
+from django.db.models import Avg
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.dateparse import parse_date
 from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.common.permissions import IsCustomer, IsMechanic, IsProvider
+from apps.common.permissions import IsCustomer, IsMechanic, IsProvider, IsRecovery
 from apps.providers.models import ProviderProfile
 
 from .models import (
@@ -165,7 +170,7 @@ class ServiceRequestAcceptView(APIView):
             raise ValidationError("You must be marked available to accept a job.")
 
         updated = ServiceRequest.objects.filter(pk=sr.pk, status=ServiceStatus.PENDING).update(
-            provider=user, status=ServiceStatus.ACCEPTED
+            provider=user, status=ServiceStatus.ACCEPTED, accepted_at=timezone.now()
         )
         if updated == 0:
             return Response(
@@ -220,6 +225,11 @@ class ServiceRequestStatusUpdateView(APIView):
             # locked in, a deliberate simplification, not an oversight.
             sr.final_fare = sr.estimated_fare
             update_fields.append("final_fare")
+            # 002-recovery-towing-web-portal: backs
+            # GET /providers/me/performance's completed_count/response-time
+            # figures (data-model.md).
+            sr.completed_at = timezone.now()
+            update_fields.append("completed_at")
         sr.save(update_fields=update_fields)
         _broadcast_status_update(sr)
         return Response(ServiceRequestSerializer(sr).data)
@@ -284,6 +294,92 @@ class ServiceRequestReviewView(APIView):
             )
 
         return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
+
+
+def _parse_period_date_param(request, key, default):
+    """Parses an optional `?{key}=YYYY-MM-DD` query param, falling back to
+    `default` when absent. 400s on an unparseable value rather than
+    silently ignoring it."""
+    raw = request.query_params.get(key)
+    if not raw:
+        return default
+    parsed = parse_date(raw)
+    if parsed is None:
+        raise ValidationError({key: "Must be an ISO 8601 date (YYYY-MM-DD)."})
+    return parsed
+
+
+class ProviderPerformanceView(APIView):
+    """GET /providers/me/performance — self-scoped
+    (`provider=request.user`), period-filterable completed-tow count,
+    average rating, and average response time. New surface, justified in
+    specs/002-recovery-towing-web-portal/spec.md's Clarifications: no
+    existing endpoint is both self-scoped to one provider and
+    period-filterable. Strictly `IsRecovery` (no `?driver=` param — there
+    is no fleet/organization model linking multiple `ProviderProfile` rows
+    under one coordinating account; see that spec's Assumptions)."""
+
+    permission_classes = [permissions.IsAuthenticated, IsRecovery]
+
+    def get(self, request):
+        today = timezone.localdate()
+        period_start = _parse_period_date_param(request, "period_start", today - timedelta(days=30))
+        period_end = _parse_period_date_param(request, "period_end", today)
+        if period_start > period_end:
+            raise ValidationError("period_start must not be after period_end.")
+
+        base = ServiceRequest.objects.filter(
+            provider=request.user, service_type=ServiceType.RECOVERY
+        )
+
+        completed_count = base.filter(
+            status=ServiceStatus.COMPLETED,
+            completed_at__date__gte=period_start,
+            completed_at__date__lte=period_end,
+        ).count()
+
+        # A cancelled request never gets a completed_at, so it's bounded by
+        # created_at instead — exists specifically so an all-cancelled
+        # period reads as "0 completed, N cancelled", not a bare,
+        # context-free zero (FR-008 edge case).
+        cancelled_count = base.filter(
+            status=ServiceStatus.CANCELLED,
+            created_at__date__gte=period_start,
+            created_at__date__lte=period_end,
+        ).count()
+
+        # __date__gte/__date__lte (not __gte/__lte against the bare date
+        # params) — a bare date compared straight against a DateTimeField
+        # would mean "before midnight at the *start* of period_end",
+        # silently excluding same-day rows (the exact bug already found
+        # and fixed for GET /providers/me/payouts — apps/providers/views.py).
+        average_rating = Review.objects.filter(
+            service_request__provider=request.user,
+            service_request__service_type=ServiceType.RECOVERY,
+            created_at__date__gte=period_start,
+            created_at__date__lte=period_end,
+        ).aggregate(avg=Avg("rating"))["avg"]
+
+        response_pairs = base.filter(
+            status=ServiceStatus.COMPLETED,
+            completed_at__date__gte=period_start,
+            completed_at__date__lte=period_end,
+            accepted_at__isnull=False,
+        ).values_list("created_at", "accepted_at")
+        response_seconds = [(accepted - created).total_seconds() for created, accepted in response_pairs]
+
+        return Response(
+            {
+                "period_start": period_start.isoformat(),
+                "period_end": period_end.isoformat(),
+                "completed_count": completed_count,
+                "cancelled_count": cancelled_count,
+                "average_rating": round(average_rating, 2) if average_rating is not None else None,
+                "average_response_time_seconds": (
+                    round(sum(response_seconds) / len(response_seconds)) if response_seconds else None
+                ),
+            }
+        )
 
 
 class PartsSourcingRequestListCreateView(APIView):

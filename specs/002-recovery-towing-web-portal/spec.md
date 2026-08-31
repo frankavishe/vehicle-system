@@ -72,29 +72,29 @@ live multi-tow view.
 
 ---
 
-### User Story 3 - Review driver/vehicle performance over time (Priority: P3)
+### User Story 3 - Review your own performance over time (Priority: P3)
 
-A fleet coordinator reviews how each recovery driver/vehicle has
-performed over a period — completed tows, ratings, response times — to
-identify who's performing well and who may need support.
+A recovery operator reviews how they've performed over a period —
+completed tows, ratings, response times — to see how they're doing and
+where they may need to improve.
 
 **Why this priority**: Explicitly named ("driver performance mgmt") but
-it's a periodic management task, not something blocking day-to-day
+it's a periodic self-review task, not something blocking day-to-day
 dispatch — the portal is fully useful for running today's tows without
 it.
 
-**Independent Test**: Can be fully tested by selecting a driver and a
-date range and confirming the shown completed-tow count, average rating,
-and response-time figures match that driver's actual job history for the
-period — independent of the live dispatch view and the fare estimator.
+**Independent Test**: Can be fully tested by selecting a date range and
+confirming the shown completed-tow count, average rating, and
+response-time figures match the logged-in operator's actual job history
+for the period — independent of the live dispatch view and the fare
+estimator.
 
 **Acceptance Scenarios**:
 
-1. **Given** a recovery operator/fleet coordinator, **When** they open the
-   performance view for a specific driver, **Then** they see that
-   driver's completed tow count, average customer rating, and typical
-   response time for a selectable period.
-2. **Given** a driver with no completed tows in the selected period,
+1. **Given** a recovery operator, **When** they open the performance view
+   and select a period, **Then** they see their own completed tow count,
+   average customer rating, and typical response time for that period.
+2. **Given** an operator with no completed tows in the selected period,
    **When** their performance is viewed, **Then** the portal shows an
    empty state rather than an error or zero-filled chart that looks
    broken.
@@ -112,8 +112,14 @@ period — independent of the live dispatch view and the fare estimator.
   estimate (via whatever fallback the platform already uses) rather than
   failing outright.
 - What happens when a single operator account is used for more than one
-  physical recovery vehicle? The portal MUST distinguish jobs by vehicle/
-  driver, not merge them into one undifferentiated stream.
+  physical recovery vehicle? Today's data model records one vehicle/
+  location per account (`ProviderProfile.vehicle_plate`/
+  `.current_location` — see Assumptions), so jobs are already
+  distinguished from each other by job id/status/pickup-dropoff, not by a
+  separate per-vehicle identity. The portal MUST NOT merge two
+  simultaneous jobs into one undifferentiated stream; true
+  multi-vehicle-per-account identity (e.g. "Truck A" vs "Truck B") is out
+  of scope without a schema change.
 - What happens when a performance query covers a period with only
   cancelled tows and no completed ones? The portal MUST make that
   distinction visible (cancelled ≠ completed) rather than showing 0 with
@@ -150,6 +156,18 @@ with why reuse isn't possible. Planning found exactly one:
   all-cancelled period reads as "0 completed, N cancelled" rather than a
   bare, context-free zero.
 
+- **Q: FR-007/Story 3 originally described viewing "a specific driver's"
+  performance, implying selection among multiple drivers. Given the
+  single-operator-account scope (Assumptions) and no fleet/organization
+  model linking multiple `ProviderProfile` rows under one coordinating
+  account, should the performance view support selecting among drivers?**
+  **A**: No — narrowed to the logged-in operator's own performance only
+  (self-scoped, no driver-selection parameter), consistent with
+  `GET /providers/me/performance` in contracts/rest.md. FR-007 and Story
+  3 have been reworded accordingly (self-review, not driver selection).
+  Multi-driver fleet management remains out of scope for this feature —
+  see Assumptions.
+
 No other gap was found: the multi-tow dispatch view (Story 1) reuses
 `GET /service-requests` (already filters to `provider=request.user` for
 the RECOVERY role) plus the existing per-job tracking WebSocket
@@ -183,9 +201,9 @@ precedent.
   commits to it.
 - **FR-006**: The portal MUST show, for a completed tow, both its original
   estimate and its final settled fare together.
-- **FR-007**: The portal MUST let the operator view a specific driver's
-  performance (completed tow count, average rating, typical response
-  time) over a selectable period.
+- **FR-007**: The portal MUST let the operator view their own performance
+  (completed tow count, average rating, typical response time) over a
+  selectable period.
 - **FR-008**: The portal MUST distinguish between "no completed tows in
   this period" and "no data available" when showing performance figures.
 - **FR-009**: The portal MUST only show the logged-in operator jobs and
@@ -207,7 +225,8 @@ precedent.
 - **Fare estimate**: A computed estimate for a pickup/drop-off pair, shown
   before job commitment and compared against the final fare afterward.
 - **Driver performance record**: Aggregated completed-tow count, average
-  rating, and response-time figures for a driver over a period.
+  rating, and response-time figures for the logged-in operator, over a
+  period.
 
 ## Success Criteria *(mandatory)*
 
@@ -219,8 +238,8 @@ precedent.
   within 5 seconds of occurring.
 - **SC-003**: An operator can get a fare estimate for a pending tow in
   under 10 seconds of opening that job.
-- **SC-004**: An operator can pull up a specific driver's performance for
-  a chosen period in 3 or fewer interactions.
+- **SC-004**: An operator can pull up their own performance for a chosen
+  period in 3 or fewer interactions.
 - **SC-005**: Zero active tows are ever shown merged or misattributed to
   the wrong job when two or more are active at once.
 
@@ -235,11 +254,21 @@ precedent.
   customer's tracking view) — this feature surfaces that existing data,
   it does not define a new fare formula or tracking mechanism.
 - "Fleet" here can mean a single operator/driver acting alone, or one
-  account coordinating several drivers/vehicles — the portal must support
-  the single-operator case at minimum; multi-driver coordination is
-  P1-compatible but its full management (e.g. assigning jobs to specific
-  drivers) is not separately specified here beyond the performance view
-  in Story 3.
+  account coordinating several drivers/vehicles — the portal supports the
+  single-operator case: every job list, tracking view, fare estimate, and
+  performance figure is scoped to the logged-in operator's own account
+  (`provider=request.user`). Multi-driver fleet management — assigning
+  jobs to specific drivers, or one coordinator viewing multiple drivers'
+  individual performance — would need a fleet/organization model this
+  spec doesn't introduce, and is out of scope entirely, including for the
+  Story 3 performance view (see Clarifications).
+- The current schema records one vehicle/location per provider account
+  (`ProviderProfile.vehicle_plate`, `.current_location`) — there is no
+  per-job vehicle identity. A single account's simultaneous jobs are
+  distinguished from each other by job id/status/pickup-dropoff, not by
+  which physical vehicle is handling them; true multi-vehicle identity
+  per account is a schema gap, not something this feature's UI can paper
+  over (see Edge Cases).
 - Driver ratings already exist as platform capability (customers already
   rate completed jobs) — this feature aggregates and displays them, it
   does not introduce a new rating mechanism.
