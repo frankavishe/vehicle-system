@@ -1,14 +1,17 @@
-from rest_framework import generics, permissions, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.common.permissions import IsAdmin
 
-from .models import User
+from .models import User, UserRole
 from .serializers import (
     AdminUserListSerializer,
     AdminUserRoleSerializer,
+    AdminUserStatusSerializer,
     CustomTokenObtainPairSerializer,
     MeSerializer,
     RegisterSerializer,
@@ -53,6 +56,13 @@ class AdminUserListView(generics.ListAPIView):
     serializer_class = AdminUserListSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
     filterset_fields = ["role", "is_active", "is_verified"]
+    # 003-admin-mobile-app FR-005 — locate an account by name/email.
+    # filter_backends is redeclared (not just appended-to) here because
+    # setting it on a view overrides DEFAULT_FILTER_BACKENDS entirely —
+    # DjangoFilterBackend has to be listed again so filterset_fields
+    # above keeps working alongside search.
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ["email", "full_name"]
 
 
 class AdminUserRoleUpdateView(generics.UpdateAPIView):
@@ -64,6 +74,25 @@ class AdminUserRoleUpdateView(generics.UpdateAPIView):
     http_method_names = ["patch"]
 
     def patch(self, request, *args, **kwargs):
+        response = super().update(request, *args, partial=True, **kwargs)
+        response.status_code = status.HTTP_200_OK
+        return response
+
+
+class AdminUserStatusUpdateView(generics.UpdateAPIView):
+    """PATCH /admin/users/{id}/status — 003-admin-mobile-app FR-005.
+    Suspend/reinstate. ADMIN-role accounts are never a valid target
+    (spec.md FR-005 — prevents an admin locking out another admin, or
+    themselves, by mistake) — checked here, not left to the client."""
+
+    queryset = User.objects.all()
+    serializer_class = AdminUserStatusSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    http_method_names = ["patch"]
+
+    def patch(self, request, *args, **kwargs):
+        if self.get_object().role == UserRole.ADMIN:
+            raise PermissionDenied("ADMIN accounts cannot be moderated through this endpoint.")
         response = super().update(request, *args, partial=True, **kwargs)
         response.status_code = status.HTTP_200_OK
         return response

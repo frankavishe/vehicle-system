@@ -68,3 +68,42 @@ def test_cannot_resolve_already_resolved_dispute(auth_client, admin_user):
     client = auth_client(admin_user)
     response = client.patch(reverse("admin-disputes-resolve", args=[dispute.id]))
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+# --- 003-admin-mobile-app: DisputeSerializer's additive read-only fields
+# (spec.md FR-002/FR-003 — job/complainant/resolver detail without a
+# second lookup, research.md §3) ---
+
+
+def test_dispute_list_includes_readable_summary_fields(auth_client, admin_user):
+    sr = ServiceRequestFactory()
+    dispute = DisputeFactory(service_request=sr, raised_by=sr.customer)
+    client = auth_client(admin_user)
+    response = client.get(reverse("admin-disputes-list"))
+    assert response.status_code == status.HTTP_200_OK
+    row = next(r for r in response.data["results"] if r["id"] == str(dispute.id))
+    assert row["service_request_summary"]["id"] == str(sr.id)
+    assert row["service_request_summary"]["service_type"] == sr.service_type
+    assert row["service_request_summary"]["status"] == sr.status
+    assert row["service_request_summary"]["customer_name"] == sr.customer.full_name
+    assert row["raised_by_name"] == sr.customer.full_name
+    assert row["raised_by_email"] == sr.customer.email
+    assert row["resolved_by_name"] is None
+
+
+def test_dispute_summary_fields_null_safe_when_raised_by_missing(auth_client, admin_user):
+    dispute = DisputeFactory(raised_by=None)
+    client = auth_client(admin_user)
+    response = client.get(reverse("admin-disputes-list"))
+    row = next(r for r in response.data["results"] if r["id"] == str(dispute.id))
+    assert row["raised_by_name"] is None
+    assert row["raised_by_email"] is None
+
+
+def test_resolved_dispute_shows_resolver_name(auth_client, admin_user):
+    dispute = DisputeFactory()
+    client = auth_client(admin_user)
+    client.patch(reverse("admin-disputes-resolve", args=[dispute.id]))
+    response = client.get(reverse("admin-disputes-list"))
+    row = next(r for r in response.data["results"] if r["id"] == str(dispute.id))
+    assert row["resolved_by_name"] == admin_user.full_name

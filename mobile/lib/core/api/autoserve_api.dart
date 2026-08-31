@@ -1,12 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../shared/models/admin_analytics_dto.dart';
+import '../../shared/models/admin_user_summary_dto.dart';
 import '../../shared/models/app_user.dart';
 import '../../shared/models/cart_dto.dart';
+import '../../shared/models/dispute_dto.dart';
 import '../../shared/models/notification_item.dart';
 import '../../shared/models/order_dto.dart';
 import '../../shared/models/order_shipment_dto.dart';
 import '../../shared/models/parts_sourcing_request.dart';
+import '../../shared/models/payout_dto.dart';
 import '../../shared/models/provider_document.dart';
 import '../../shared/models/service_request.dart';
 import '../../shared/models/spare_part_summary.dart';
@@ -269,6 +273,67 @@ class AutoserveApi {
 
   Future<void> registerDeviceToken({required String fcmToken, required String platform}) =>
       _dio.post('/users/me/device-tokens', data: {'fcm_token': fcmToken, 'platform': platform});
+
+  // --- Admin: disputes (003-admin-mobile-app, spec.md FR-002/FR-003) ---
+  Future<List<DisputeDto>> listDisputes({String? status}) async {
+    final response = await _dio.get(
+      '/admin/disputes',
+      queryParameters: status != null ? {'status': status} : null,
+    );
+    final data = response.data;
+    final results = data is Map ? data['results'] as List : data as List;
+    return results.map((e) => DisputeDto.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<DisputeDto> resolveDispute(String id) async {
+    final response = await _dio.patch('/admin/disputes/$id/resolve');
+    return DisputeDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  // --- Admin: oversight (spec.md FR-004) ---
+  Future<AdminAnalyticsDto> getAnalytics() async {
+    final response = await _dio.get('/admin/analytics');
+    return AdminAnalyticsDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  // --- Admin: moderation + payouts (spec.md FR-005/FR-006) ---
+  Future<List<AdminUserSummaryDto>> searchUsers({String? search, String? role}) async {
+    final response = await _dio.get(
+      '/admin/users',
+      queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+        'role': ?role,
+      },
+    );
+    final data = response.data;
+    final results = data is Map ? data['results'] as List : data as List;
+    return results.map((e) => AdminUserSummaryDto.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<AdminUserSummaryDto> setUserStatus(String id, bool isActive) async {
+    final response = await _dio.patch('/admin/users/$id/status', data: {'is_active': isActive});
+    return AdminUserSummaryDto.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<PayoutDto>> listPayouts({String? provider}) async {
+    final response = await _dio.get(
+      '/admin/payouts',
+      queryParameters: provider != null ? {'provider': provider} : null,
+    );
+    final data = response.data;
+    final results = data is Map ? data['results'] as List : data as List;
+    return results.map((e) => PayoutDto.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Throws a [DioException] with a 404 response when the provider has
+  /// nothing outstanding to pay out — callers surface
+  /// `e.response?.data['detail']` rather than treating this as a generic
+  /// failure (spec.md's zero/invalid-payout edge case, already enforced
+  /// server-side by AdminPayoutTriggerView).
+  Future<List<PayoutDto>> triggerManualPayout(String providerId) async {
+    final response = await _dio.post('/admin/payouts/$providerId/trigger');
+    return (response.data as List).map((e) => PayoutDto.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }
 
 final autoserveApiProvider = Provider<AutoserveApi>((ref) {

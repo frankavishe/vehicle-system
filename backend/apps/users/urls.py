@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .views import (
     AdminUserListView,
     AdminUserRoleUpdateView,
+    AdminUserStatusUpdateView,
     CustomTokenObtainPairView,
     MeView,
     RegisterView,
@@ -23,5 +24,10 @@ urlpatterns = [
         "admin/users/<uuid:pk>/role",
         AdminUserRoleUpdateView.as_view(),
         name="admin-users-role",
+    ),
+    path(
+        "admin/users/<uuid:pk>/status",
+        AdminUserStatusUpdateView.as_view(),
+        name="admin-users-status",
     ),
 ]
