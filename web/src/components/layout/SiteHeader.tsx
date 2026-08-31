@@ -53,6 +53,11 @@ export function SiteHeader() {
               Mechanic Portal
             </Link>
           )}
+          {user?.role === "RECOVERY" && (
+            <Link href="/recovery" className="hover:text-asphalt">
+              Recovery Portal
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-4">

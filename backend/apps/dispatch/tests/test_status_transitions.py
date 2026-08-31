@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 
 from apps.dispatch.models import ServiceStatus, ServiceType
@@ -18,6 +21,10 @@ def test_provider_advances_accepted_to_en_route(auth_client, mechanic_user):
     response = client.patch(reverse("service-requests-status", args=[sr.id]), {"status": "EN_ROUTE"})
     assert response.status_code == status.HTTP_200_OK
     assert response.data["status"] == ServiceStatus.EN_ROUTE
+    # 002-recovery-towing-web-portal: completed_at is only ever set on the
+    # COMPLETED transition, never on any other.
+    sr.refresh_from_db()
+    assert sr.completed_at is None
 
 
 def test_provider_advances_en_route_to_in_progress(auth_client, mechanic_user):
@@ -25,6 +32,8 @@ def test_provider_advances_en_route_to_in_progress(auth_client, mechanic_user):
     client = auth_client(mechanic_user)
     response = client.patch(reverse("service-requests-status", args=[sr.id]), {"status": "IN_PROGRESS"})
     assert response.status_code == status.HTTP_200_OK
+    sr.refresh_from_db()
+    assert sr.completed_at is None
 
 
 def test_provider_completes_in_progress(auth_client, mechanic_user):
@@ -34,6 +43,25 @@ def test_provider_completes_in_progress(auth_client, mechanic_user):
     assert response.status_code == status.HTTP_200_OK
     # Phase 4: completion locks in final_fare = estimated_fare (§5.2).
     assert response.data["final_fare"] == "5000.00"
+    # 002-recovery-towing-web-portal: completed_at is set exactly once, at
+    # the COMPLETED transition (data-model.md).
+    assert response.data["completed_at"] is not None
+    sr.refresh_from_db()
+    assert sr.completed_at is not None
+
+
+def test_completing_a_second_time_does_not_move_completed_at(auth_client, mechanic_user):
+    """COMPLETED is terminal (test_completed_is_terminal below), but this
+    guards the timestamp specifically: even if a second COMPLETED PATCH
+    were ever allowed, completed_at must not silently re-set (write-once,
+    per data-model.md)."""
+    first_completed_at = timezone.now() - timedelta(hours=1)
+    sr = _sr(status=ServiceStatus.COMPLETED, provider=mechanic_user, completed_at=first_completed_at)
+    client = auth_client(mechanic_user)
+    response = client.patch(reverse("service-requests-status", args=[sr.id]), {"status": "COMPLETED"})
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    sr.refresh_from_db()
+    assert sr.completed_at == first_completed_at
 
 
 def test_customer_cannot_advance_to_en_route(auth_client, customer_user):

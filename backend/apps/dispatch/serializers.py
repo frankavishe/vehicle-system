@@ -46,6 +46,11 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "id", "customer", "provider", "service_type", "status",
             "pickup_location", "dropoff_location", "problem_description",
             "estimated_fare", "final_fare", "created_at",
+            # 002-recovery-towing-web-portal: additive-only (plain model
+            # fields on an already-fully-serialized model) — every existing
+            # caller (mechanic portal, customer tracking page, mobile apps)
+            # already ignores unknown-to-them extra fields.
+            "accepted_at", "completed_at",
         ]
         read_only_fields = fields
 

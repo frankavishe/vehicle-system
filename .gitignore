@@ -24,6 +24,10 @@ node_modules/
 .next/
 out/
 web/.env*.local
+# TypeScript incremental-build cache (web/tsconfig.json's incremental:
+# true regenerates this on every local `tsc`/`next build`) — a build
+# artifact, not source.
+*.tsbuildinfo
 
 # --- Flutter / Dart (mobile/, Phase 3+) ---
 mobile/.dart_tool/
