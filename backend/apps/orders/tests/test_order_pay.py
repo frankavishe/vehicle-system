@@ -1,12 +1,14 @@
 from decimal import Decimal
 
 import pytest
+import requests
 from django.urls import reverse
 from rest_framework import status
 
+from apps.catalog.tests.factories import SparePartFactory
 from apps.orders.gateways.base import CheckoutResult
-from apps.orders.models import OrderStatus, Payment
-from apps.orders.tests.factories import OrderFactory
+from apps.orders.models import OrderStatus, Payment, PaymentStatus
+from apps.orders.tests.factories import OrderFactory, OrderItemFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -16,10 +18,23 @@ class _FakeGatewayClient:
         return CheckoutResult(checkout_url="https://checkout.test/session/abc", gateway_transaction_id="gw-1")
 
 
+class _UnreachableGatewayClient:
+    def initiate_checkout(self, *, payment, redirect_url):
+        raise requests.ConnectionError("could not connect")
+
+
 @pytest.fixture
 def fake_gateway(monkeypatch):
     monkeypatch.setattr(
         "apps.orders.services.payments.get_gateway_client", lambda provider_gateway: _FakeGatewayClient()
+    )
+
+
+@pytest.fixture
+def unreachable_gateway(monkeypatch):
+    monkeypatch.setattr(
+        "apps.orders.services.payments.get_gateway_client",
+        lambda provider_gateway: _UnreachableGatewayClient(),
     )
 
 
@@ -64,3 +79,23 @@ def test_pay_requires_auth(api_client):
     order = OrderFactory()
     response = api_client.post(reverse("orders-pay", args=[order.id]), {"payment_method": "CARD"})
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_pay_releases_stock_when_gateway_unreachable(auth_client, customer_user, unreachable_gateway):
+    """A gateway call that never comes back must not leave the order
+    sitting PENDING forever holding a stock reservation for a payment that
+    never started (see services/payments.py's except block)."""
+    order = OrderFactory(customer=customer_user, status=OrderStatus.PENDING, total_amount="5000.00")
+    part = SparePartFactory(stock_quantity=7)
+    OrderItemFactory(order=order, spare_part=part, quantity=3)
+
+    client = auth_client(customer_user)
+    response = client.post(reverse("orders-pay", args=[order.id]), {"payment_method": "CARD"})
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    order.refresh_from_db()
+    assert order.status == OrderStatus.CANCELLED
+    part.refresh_from_db()
+    assert part.stock_quantity == 10
+    payment = Payment.objects.get(order=order)
+    assert payment.status == PaymentStatus.FAILED

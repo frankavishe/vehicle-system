@@ -3,11 +3,13 @@
 function with `service_request=` instead of `order=`, now that the fare
 engine (PLAN.md §5.2) populates `estimated_fare`/`final_fare`."""
 
+import requests
 from django.conf import settings
 from rest_framework import serializers
 
 from ..gateways.routing import get_gateway_client, select_gateway
-from ..models import Payment
+from ..models import Payment, PaymentStatus
+from .checkout import cancel_order
 
 
 def initiate_payment(*, user, payment_method, order=None, service_request=None):
@@ -46,7 +48,23 @@ def initiate_payment(*, user, payment_method, order=None, service_request=None):
     redirect_url = (
         f"{settings.FRONTEND_BASE_URL}/checkout/complete?{redirect_param}={redirect_target}"
     )
-    result = client.initiate_checkout(payment=payment, redirect_url=redirect_url)
+    try:
+        result = client.initiate_checkout(payment=payment, redirect_url=redirect_url)
+    except requests.RequestException:
+        # The gateway call never produced a usable response (network
+        # failure, DNS, timeout, or a non-2xx status via raise_for_status())
+        # — don't leave `order` sitting PENDING forever holding a stock
+        # reservation for a payment that never actually started (see
+        # services/checkout.py's reserve-at-creation policy). A
+        # service_request has no stock to release, so there's nothing to
+        # cancel on that path.
+        payment.status = PaymentStatus.FAILED
+        payment.save(update_fields=["status"])
+        if order is not None:
+            cancel_order(order)
+        raise serializers.ValidationError(
+            "The payment provider could not be reached. Please try again."
+        )
 
     if result.gateway_transaction_id:
         payment.gateway_transaction_id = result.gateway_transaction_id
