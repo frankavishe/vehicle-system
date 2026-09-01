@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/screens/admin_shell.dart';
+import '../../features/admin/screens/dispute_detail_screen.dart';
+import '../../features/admin/screens/moderation_screen.dart';
+import '../../features/admin/screens/payout_trigger_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/customer/screens/customer_shell.dart';
@@ -16,9 +20,9 @@ import '../../features/shop/screens/part_detail_screen.dart';
 import '../../features/tracking/screens/tracking_screen.dart';
 import '../auth/auth_state.dart';
 
-/// Role -> the shell route it's confined to. Admin's Phase-3 mobile
-/// surface is intentionally thin (profile only) — apps.admin_ops doesn't
-/// exist until Phase 4, so /admin has no sub-routes of its own yet.
+/// Role -> the shell route it's confined to. Admin's mobile surface
+/// (003-admin-mobile-app) has its own nested routes below, same pattern
+/// as every other role.
 String homeForRole(String role) => switch (role) {
       'CUSTOMER' => '/customer',
       'MECHANIC' => '/mechanic',
@@ -149,40 +153,30 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: '/admin', builder: (context, state) => const AdminHomeScreen()),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminShell(),
+        routes: [
+          // 003-admin-mobile-app — deep-linkable so a future push
+          // notification (explicitly out of scope this feature, see
+          // spec.md Assumptions) has a stable route to land on later
+          // without a router change.
+          GoRoute(
+            path: 'disputes/:id',
+            builder: (context, state) =>
+                DisputeDetailScreen(disputeId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'moderation/accounts/:id',
+            builder: (context, state) =>
+                AccountDetailScreen(accountId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'moderation/payout',
+            builder: (context, state) => const PayoutTriggerScreen(),
+          ),
+        ],
+      ),
     ],
   );
 });
-
-/// Admin's mobile surface this phase — profile only, per PLAN §7 item 10.
-class AdminHomeScreen extends ConsumerWidget {
-  const AdminHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('AutoServe Admin')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'The admin console lives on the web portal.\n'
-                'This mobile surface is profile-only until Phase 4 '
-                '(apps.admin_ops: disputes, analytics, live map).',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-                child: const Text('Log out'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

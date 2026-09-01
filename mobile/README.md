@@ -6,6 +6,18 @@ WebSocket location tracking, PLAN.md §5.2). See `PLAN.md` §7 and
 `C:\Users\User\.claude\plans\phase-3-flutter-dispatch-plan.md` for the
 Phase 3 design and every flagged package/scope decision from that phase.
 
+**`features/admin/`** (spec-kit feature `003-admin-mobile-app`) replaces
+the old profile-only `/admin` stub with a real 4-tab shell — Disputes
+(resolve, `dispute_list_screen.dart`/`dispute_detail_screen.dart`),
+Oversight (platform health + abnormal-condition alert,
+`oversight_screen.dart`), Moderation (account search/suspend/reinstate +
+manual payout trigger, `moderation_screen.dart`/`payout_trigger_screen.dart`),
+and the existing shared `ProfileScreen`. Disputes/Oversight auto-refresh
+every 10s while visible (`specs/003-admin-mobile-app/research.md` §10);
+every mutating action (resolve/suspend/reinstate/trigger payout) is gated
+through the shared `widgets/confirm_action_dialog.dart`. See
+`specs/003-admin-mobile-app/` for the full spec/plan/tasks.
+
 ## Stack
 
 Riverpod (state) · go_router (routing + role-based redirect guards) · dio
@@ -91,15 +103,18 @@ dart run build_runner build --delete-conflicting-outputs
 
 Deliberately light, mirroring `web/`'s own documented `frontend-ci.yml`
 asymmetry applied to this second UI stack: `test/unit/` covers pure logic
-only — the router's redirect guard (`app_router_test.dart`), the
-client-side `ALLOWED_TRANSITIONS` mirror (`service_status_transitions_test.dart`),
-the dio 401-refresh-retry interceptor
-(`dio_401_retry_test.dart`, against a scripted fake `HttpClientAdapter` —
-no real network, no mocking package), and (Phase 4) the
-`wsBaseUrl` derivation (`api_config_test.dart`). No widget/golden/
-integration suite this phase — `features/tracking/screens/tracking_screen.dart`'s
-actual WebSocket/map behavior is exercised manually against a running
-backend, same as every other screen.
+only — the router's redirect guard (`app_router_test.dart`, extended by
+`003-admin-mobile-app`'s `admin_router_test.dart` for the new `/admin/*`
+nested routes), the client-side `ALLOWED_TRANSITIONS` mirror
+(`service_status_transitions_test.dart`), the dio 401-refresh-retry
+interceptor (`dio_401_retry_test.dart`, against a scripted fake
+`HttpClientAdapter` — no real network, no mocking package), (Phase 4) the
+`wsBaseUrl` derivation (`api_config_test.dart`), and
+(`003-admin-mobile-app`) the staleness-threshold helper
+(`staleness_test.dart`, `features/admin/widgets/staleness_banner.dart`'s
+`isStale`). No widget/golden/integration suite — `features/tracking/screens/tracking_screen.dart`'s
+actual WebSocket/map behavior and `features/admin/`'s screens are
+exercised manually against a running backend, same as every other screen.
 
 ```bash
 flutter analyze

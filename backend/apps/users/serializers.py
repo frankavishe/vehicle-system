@@ -77,6 +77,31 @@ class AdminUserRoleSerializer(serializers.ModelSerializer):
         fields = ["role"]
 
 
+class AdminUserStatusSerializer(serializers.ModelSerializer):
+    """003-admin-mobile-app FR-005 — suspend (`is_active=False`) /
+    reinstate (`is_active=True`). Sibling of AdminUserRoleSerializer
+    above, not folded into it — see plan.md's Complexity Tracking for why
+    a `/role`-named endpoint shouldn't also silently accept `is_active`.
+
+    Returns the full user (contracts/admin-mobile-api.md: "the updated
+    user, same shape as the list item above") rather than just
+    `is_active` — the mobile client parses this response straight into
+    `AdminUserSummaryDto`, which requires those other fields."""
+
+    # Explicitly required — the model's own `default=True` would
+    # otherwise make DRF infer this field as optional, which would let a
+    # PATCH with an empty body silently no-op instead of erroring.
+    is_active = serializers.BooleanField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "email", "phone", "full_name", "role",
+            "is_active", "is_verified", "created_at",
+        ]
+        read_only_fields = ["id", "email", "phone", "full_name", "role", "is_verified", "created_at"]
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Adds `role` and `full_name` claims to the JWT access token, per
     PLAN.md §6 ("`role` claim embedded")."""

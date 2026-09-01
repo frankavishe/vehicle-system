@@ -233,6 +233,13 @@ PLATFORM_COMMISSION_PCT = env.float("PLATFORM_COMMISSION_PCT", default=0.15)
 # out through this one gateway instead, until that field exists.
 PROVIDER_PAYOUT_GATEWAY = env("PROVIDER_PAYOUT_GATEWAY", default="FLUTTERWAVE")
 
+# --- 003-admin-mobile-app: oversight abnormal-condition alert (spec.md
+# FR-004) --- Confirmed with the user via /speckit-clarify: more than 5
+# failed notifications or failed payments in a trailing 24h window counts
+# as "abnormal" — a launch-default threshold, tunable via env, same
+# pattern as PLATFORM_COMMISSION_PCT above.
+FAILURE_ALERT_THRESHOLD = env.int("FAILURE_ALERT_THRESHOLD", default=5)
+
 # --- Phase 4: weekly payout batch schedule (PLAN.md §5.5) ---
 # Monday 02:00 Africa/Dar_es_Salaam — PLAN only says "weekly", this exact
 # slot is an arbitrary but reasonable choice (low-traffic hour), flagged
