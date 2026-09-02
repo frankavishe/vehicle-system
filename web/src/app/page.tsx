@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CompatibilitySearch } from "@/components/catalog/CompatibilitySearch";
 import { PartCard } from "@/components/catalog/PartCard";
+import { Notice } from "@/components/layout/Notice";
 import { apiFetch } from "@/lib/api/server";
 import type { Facets, SparePart } from "@/lib/types";
 
@@ -26,11 +27,20 @@ async function getFeaturedParts(): Promise<PartsPage> {
   }
 }
 
-export default async function HomePage() {
-  const [facets, parts] = await Promise.all([getFacets(), getFeaturedParts()]);
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string }>;
+}) {
+  const [{ notice }, facets, parts] = await Promise.all([
+    searchParams,
+    getFacets(),
+    getFeaturedParts(),
+  ]);
 
   return (
     <div className="flex flex-col gap-16">
+      <Notice code={notice} />
       <section className="grid gap-8 py-4 sm:grid-cols-[1.1fr_0.9fr] sm:items-center">
         <div className="flex flex-col gap-5">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-hazard">

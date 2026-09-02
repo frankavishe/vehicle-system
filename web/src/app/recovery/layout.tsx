@@ -16,7 +16,7 @@ export default async function RecoveryLayout({ children }: { children: ReactNode
   // gate needs one extra call to the existing /users/me endpoint, exactly
   // as 001-mechanic-web-portal's layout.tsx already does.
   const me = await apiFetch<MeResponse>("/users/me");
-  if (!me.is_verified) redirect("/");
+  if (!me.is_verified) redirect("/?notice=recovery-pending");
 
   return (
     <div className="flex flex-col gap-6">

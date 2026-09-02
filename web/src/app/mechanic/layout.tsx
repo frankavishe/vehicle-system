@@ -16,7 +16,7 @@ export default async function MechanicLayout({ children }: { children: ReactNode
   // gate needs one extra call to the existing /users/me endpoint rather
   // than a new claim (see specs/001-mechanic-web-portal/research.md).
   const me = await apiFetch<MeResponse>("/users/me");
-  if (!me.is_verified) redirect("/");
+  if (!me.is_verified) redirect("/?notice=mechanic-pending");
 
   return (
     <div className="flex flex-col gap-6">
