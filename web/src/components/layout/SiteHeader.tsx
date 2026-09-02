@@ -34,9 +34,14 @@ export function SiteHeader() {
             Catalog
           </Link>
           {user?.role === "CUSTOMER" && (
-            <Link href="/orders" className="hover:text-asphalt">
-              My orders
-            </Link>
+            <>
+              <Link href="/orders" className="hover:text-asphalt">
+                My orders
+              </Link>
+              <Link href="/requests" className="hover:text-asphalt">
+                Request mechanic/tow
+              </Link>
+            </>
           )}
           {user?.role === "ADMIN" && (
             <>

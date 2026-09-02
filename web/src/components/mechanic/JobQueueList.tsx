@@ -18,7 +18,16 @@ import type { ServiceRequest } from "@/lib/types";
 // offers and other mechanics' accepts surface here.
 const QUEUE_POLL_INTERVAL_MS = 10000;
 
-export function JobQueueList({ initialJobs }: { initialJobs: ServiceRequest[] }) {
+export function JobQueueList({
+  initialJobs,
+  jobHrefBase = "/mechanic/jobs",
+}: {
+  initialJobs: ServiceRequest[];
+  // Recovery's Dispatch page reuses this same component (no
+  // mechanic-specific logic here) but its job detail pages live under
+  // /recovery/jobs, not /mechanic/jobs.
+  jobHrefBase?: string;
+}) {
   const [jobs, setJobs] = useState(initialJobs);
   const [declinedIds, setDeclinedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +74,13 @@ export function JobQueueList({ initialJobs }: { initialJobs: ServiceRequest[] })
           <p className="p-4 text-sm text-steel-soft">No jobs waiting right now — check back once you&apos;re online.</p>
         )}
         {visibleJobs.map((job) => (
-          <JobQueueRow key={job.id} job={job} onAccepted={setJobs} onDecline={() => decline(job.id)} />
+          <JobQueueRow
+            key={job.id}
+            job={job}
+            jobHrefBase={jobHrefBase}
+            onAccepted={setJobs}
+            onDecline={() => decline(job.id)}
+          />
         ))}
       </div>
     </div>
@@ -74,10 +89,12 @@ export function JobQueueList({ initialJobs }: { initialJobs: ServiceRequest[] })
 
 function JobQueueRow({
   job,
+  jobHrefBase,
   onAccepted,
   onDecline,
 }: {
   job: ServiceRequest;
+  jobHrefBase: string;
   onAccepted: (updater: (jobs: ServiceRequest[]) => ServiceRequest[]) => void;
   onDecline: () => void;
 }) {
@@ -110,7 +127,7 @@ function JobQueueRow({
 
   return (
     <div className="flex items-center justify-between gap-4 p-4">
-      <Link href={`/mechanic/jobs/${job.id}`} className="flex flex-col gap-0.5 hover:opacity-80">
+      <Link href={`${jobHrefBase}/${job.id}`} className="flex flex-col gap-0.5 hover:opacity-80">
         <span className="text-sm font-semibold text-asphalt">
           {job.problem_description ?? "No description provided"}
         </span>
