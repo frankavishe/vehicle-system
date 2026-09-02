@@ -10,6 +10,7 @@ from .views import (
     OrderListCreateView,
     OrderPayView,
     OrderShipmentView,
+    PaymentSimulateView,
 )
 from .webhook_views import FlutterwaveWebhookView, SelcomWebhookView
 
@@ -27,6 +28,9 @@ urlpatterns = [
         AdminOrderShipmentView.as_view(),
         name="admin-orders-shipment",
     ),
+    # TEMPORARY — see PAYMENT_SIMULATION_MODE's docstring in
+    # config/settings/base.py; remove this route together with that flag.
+    path("payments/<uuid:pk>/simulate", PaymentSimulateView.as_view(), name="payments-simulate"),
     # Mounted under /api/v1/ (config/urls.py) for consistency with every
     # other Phase 1/2 endpoint group, even though PLAN.md §4 writes this
     # bullet without that prefix.

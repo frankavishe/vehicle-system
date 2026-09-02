@@ -14,6 +14,11 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",  # fast, test-only
 ]
 
+# TEMPORARY — see PAYMENT_SIMULATION_MODE's docstring in base.py. Pinned
+# off here regardless of a developer's local .env so
+# test_gateway_routing.py's real-routing assertions stay deterministic.
+PAYMENT_SIMULATION_MODE = False
+
 # Phase 3: tasks run synchronously in-process during tests — no worker/
 # broker round-trip, no need for a running Redis in CI/local pytest.
 CELERY_TASK_ALWAYS_EAGER = True

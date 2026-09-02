@@ -178,6 +178,16 @@ SELCOM_BASE_URL = env("SELCOM_BASE_URL", default="https://apigw.selcommobile.com
 # payment (Next.js storefront's /checkout/complete page).
 FRONTEND_BASE_URL = env("FRONTEND_BASE_URL", default="http://localhost:3000")
 
+# TEMPORARY, remove together with apps.orders.gateways.simulated,
+# CheckoutPaymentSimulateView (apps/orders/views.py), the
+# payments/<uuid:pk>/simulate route (apps/orders/urls.py), and
+# web/src/app/checkout/simulate once real Flutterwave/Selcom sandbox
+# testing takes over: when True, get_gateway_client() (gateways/routing.py)
+# hands back SimulatedGatewayClient instead of a real gateway client for
+# every payment, so checkout can be exercised end-to-end with no real
+# money moving and no gateway credentials required.
+PAYMENT_SIMULATION_MODE = env.bool("PAYMENT_SIMULATION_MODE", default=False)
+
 # --- Phase 3/4: Firebase Cloud Messaging + web push (see PLAN.md §5.4) ---
 # Human account-setup action item — PLAN.md §7 Phase 1 checklist.
 # No integration code reads these yet (Phase 3-4).

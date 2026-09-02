@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -10,7 +11,8 @@ from rest_framework.views import APIView
 from apps.catalog.models import SparePart
 from apps.common.permissions import IsAdmin, IsCustomer
 
-from .models import Cart, CartItem, Order, OrderShipment
+from .gateways.base import VerifiedTransaction
+from .models import Cart, CartItem, Order, OrderShipment, Payment, PaymentStatus
 from .serializers import (
     AdminOrderShipmentUpdateSerializer,
     CartItemCreateSerializer,
@@ -22,7 +24,7 @@ from .serializers import (
     OrderShipmentSerializer,
 )
 from .services.checkout import cancel_order, create_order_from_cart
-from .services.payments import initiate_payment
+from .services.payments import apply_verified_result, initiate_payment
 
 
 class CartView(APIView):
@@ -223,3 +225,46 @@ class OrderPayView(APIView):
             raise ValidationError({"payment_method": "This field is required."})
         result = initiate_payment(user=request.user, payment_method=payment_method, order=order)
         return Response(result, status=status.HTTP_201_CREATED)
+
+
+class PaymentSimulateView(APIView):
+    """POST /payments/{id}/simulate — owner-only. body: {"outcome":
+    "SUCCESSFUL"|"FAILED"}.
+
+    TEMPORARY — see PAYMENT_SIMULATION_MODE's docstring in
+    config/settings/base.py; remove this view (and its route in urls.py)
+    together with that flag. Stands in for a real gateway's webhook: the
+    web/'s /checkout/simulate page (reached via
+    apps.orders.gateways.simulated.SimulatedGatewayClient's checkout_url)
+    calls this directly instead of a signed webhook callback, since
+    there's no real gateway to send one. 404s outright when the flag is
+    off, so this endpoint can't settle a real payment even if the route
+    is still mounted."""
+
+    permission_classes = [permissions.IsAuthenticated, IsCustomer]
+
+    def post(self, request, pk):
+        if not settings.PAYMENT_SIMULATION_MODE:
+            raise Http404
+
+        payment = get_object_or_404(Payment, pk=pk)
+        payer_id = payment.order.customer_id if payment.order_id else payment.service_request.customer_id
+        if payer_id != request.user.id:
+            # 404, not 403 — consistent with _get_owned_or_admin_order above.
+            raise Http404
+
+        outcome = request.data.get("outcome")
+        if outcome not in (PaymentStatus.SUCCESSFUL, PaymentStatus.FAILED):
+            raise ValidationError({"outcome": "Must be 'SUCCESSFUL' or 'FAILED'."})
+        if payment.status != PaymentStatus.PENDING:
+            raise ValidationError({"detail": "This payment was already settled."})
+
+        verified = VerifiedTransaction(
+            status=outcome,
+            amount=payment.amount,
+            currency=settings.DEFAULT_CURRENCY,
+            gateway_transaction_id=payment.gateway_transaction_id or f"SIM-{payment.transaction_ref}",
+        )
+        apply_verified_result(payment, verified)
+        payment.refresh_from_db()
+        return Response({"payment_id": payment.id, "status": payment.status})

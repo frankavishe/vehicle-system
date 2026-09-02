@@ -3,6 +3,8 @@
 `select_gateway`/`get_gateway_client` from here — nothing else in the
 codebase should know which method maps to which gateway."""
 
+from django.conf import settings
+
 from ..models import PaymentMethod, ProviderGateway
 
 _GATEWAY_BY_METHOD = {
@@ -22,6 +24,16 @@ def select_gateway(payment_method: str) -> str:
 
 
 def get_gateway_client(provider_gateway: str):
+    # TEMPORARY — see PAYMENT_SIMULATION_MODE's docstring in
+    # config/settings/base.py. Checked before the real per-gateway branches
+    # below so `provider_gateway` still routes CARD/M-Pesa/etc consistently
+    # (Payment.provider_gateway is unaffected) — only which client actually
+    # handles the call changes.
+    if settings.PAYMENT_SIMULATION_MODE:
+        from .simulated import SimulatedGatewayClient
+
+        return SimulatedGatewayClient()
+
     # Imported lazily to avoid importing both gateway SDKs' modules (and
     # their settings-dependent client construction) unless actually needed.
     if provider_gateway == ProviderGateway.FLUTTERWAVE:
