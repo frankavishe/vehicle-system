@@ -12,6 +12,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="flex flex-col gap-6">
       <nav className="flex gap-6 border-b border-line pb-3 text-sm font-semibold text-steel">
+        <Link href="/admin/users" className="hover:text-asphalt">
+          Users
+        </Link>
         <Link href="/admin/vendors" className="hover:text-asphalt">
           Vendors
         </Link>

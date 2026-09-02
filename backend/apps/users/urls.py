@@ -5,6 +5,7 @@ from .views import (
     AdminUserListView,
     AdminUserRoleUpdateView,
     AdminUserStatusUpdateView,
+    AdminUserVerifyView,
     CustomTokenObtainPairView,
     MeView,
     RegisterView,
@@ -16,7 +17,8 @@ urlpatterns = [
     path("auth/refresh", TokenRefreshView.as_view(), name="auth-refresh"),
     # simplejwt's standard "does this token validate" check — PLAN.md §4
     # lists /auth/verify without further definition and there's no OTP
-    # infra yet; users.is_verified stays a separate, manually-set field.
+    # infra yet; users.is_verified is a distinct field, flipped by an
+    # admin via PATCH /admin/users/{id}/verify below, not this endpoint.
     path("auth/verify", TokenVerifyView.as_view(), name="auth-verify"),
     path("users/me", MeView.as_view(), name="users-me"),
     path("admin/users", AdminUserListView.as_view(), name="admin-users-list"),
@@ -29,5 +31,10 @@ urlpatterns = [
         "admin/users/<uuid:pk>/status",
         AdminUserStatusUpdateView.as_view(),
         name="admin-users-status",
+    ),
+    path(
+        "admin/users/<uuid:pk>/verify",
+        AdminUserVerifyView.as_view(),
+        name="admin-users-verify",
     ),
 ]

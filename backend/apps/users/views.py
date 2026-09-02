@@ -12,6 +12,7 @@ from .serializers import (
     AdminUserListSerializer,
     AdminUserRoleSerializer,
     AdminUserStatusSerializer,
+    AdminUserVerifySerializer,
     CustomTokenObtainPairSerializer,
     MeSerializer,
     RegisterSerializer,
@@ -93,6 +94,28 @@ class AdminUserStatusUpdateView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         if self.get_object().role == UserRole.ADMIN:
             raise PermissionDenied("ADMIN accounts cannot be moderated through this endpoint.")
+        response = super().update(request, *args, partial=True, **kwargs)
+        response.status_code = status.HTTP_200_OK
+        return response
+
+
+class AdminUserVerifyView(generics.UpdateAPIView):
+    """PATCH /admin/users/{id}/verify — approve (or revoke) a MECHANIC/
+    RECOVERY account's verification. `is_verified` was previously a
+    manually-set-only field (see urls.py's note by /auth/verify below);
+    this is the first API path that flips it, unlocking the portal gate
+    in mechanic/layout.tsx and recovery/layout.tsx on web. Restricted to
+    those two roles — verification isn't a meaningful concept for
+    CUSTOMER/ADMIN accounts."""
+
+    queryset = User.objects.all()
+    serializer_class = AdminUserVerifySerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    http_method_names = ["patch"]
+
+    def patch(self, request, *args, **kwargs):
+        if self.get_object().role not in (UserRole.MECHANIC, UserRole.RECOVERY):
+            raise PermissionDenied("Only mechanic and recovery accounts can be verified here.")
         response = super().update(request, *args, partial=True, **kwargs)
         response.status_code = status.HTTP_200_OK
         return response

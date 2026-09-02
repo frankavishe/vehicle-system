@@ -102,6 +102,28 @@ class AdminUserStatusSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "email", "phone", "full_name", "role", "is_verified", "created_at"]
 
 
+class AdminUserVerifySerializer(serializers.ModelSerializer):
+    """Verify/unverify a MECHANIC or RECOVERY account. Sibling of
+    AdminUserStatusSerializer above — `is_verified` was previously a
+    manually-set-only field (see users/urls.py's note on /auth/verify);
+    this is the first API path that flips it. Same "return the full user"
+    shape as /status so any client parsing AdminUserSummaryDto works
+    unchanged."""
+
+    # Explicit + required for the same reason as AdminUserStatusSerializer's
+    # is_active: the model's default=False would otherwise make DRF treat
+    # this as optional, letting an empty-body PATCH silently no-op.
+    is_verified = serializers.BooleanField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "email", "phone", "full_name", "role",
+            "is_active", "is_verified", "created_at",
+        ]
+        read_only_fields = ["id", "email", "phone", "full_name", "role", "is_active", "created_at"]
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Adds `role` and `full_name` claims to the JWT access token, per
     PLAN.md §6 ("`role` claim embedded")."""

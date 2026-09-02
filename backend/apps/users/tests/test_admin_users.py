@@ -146,3 +146,70 @@ def test_non_admin_cannot_change_status(auth_client, customer_user, mechanic_use
     url = reverse("admin-users-status", args=[mechanic_user.id])
     response = client.patch(url, {"is_active": False})
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+# --- verify (unlocks the mechanic/recovery web portal gate) ---
+
+
+def test_admin_can_verify_mechanic(auth_client, admin_user, mechanic_user):
+    client = auth_client(admin_user)
+    url = reverse("admin-users-verify", args=[mechanic_user.id])
+    response = client.patch(url, {"is_verified": True})
+    assert response.status_code == status.HTTP_200_OK
+    mechanic_user.refresh_from_db()
+    assert mechanic_user.is_verified is True
+    # Same "full user" shape as /status — see that endpoint's test above.
+    assert response.data["id"] == str(mechanic_user.id)
+    assert response.data["is_verified"] is True
+
+
+def test_admin_can_verify_recovery_operator(auth_client, admin_user):
+    recovery_user = UserFactory(role=UserRole.RECOVERY)
+    client = auth_client(admin_user)
+    url = reverse("admin-users-verify", args=[recovery_user.id])
+    response = client.patch(url, {"is_verified": True})
+    assert response.status_code == status.HTTP_200_OK
+    recovery_user.refresh_from_db()
+    assert recovery_user.is_verified is True
+
+
+def test_admin_can_revoke_verification(auth_client, admin_user, mechanic_user):
+    mechanic_user.is_verified = True
+    mechanic_user.save(update_fields=["is_verified"])
+    client = auth_client(admin_user)
+    url = reverse("admin-users-verify", args=[mechanic_user.id])
+    response = client.patch(url, {"is_verified": False})
+    assert response.status_code == status.HTTP_200_OK
+    mechanic_user.refresh_from_db()
+    assert mechanic_user.is_verified is False
+
+
+def test_cannot_verify_customer_account(auth_client, admin_user, customer_user):
+    client = auth_client(admin_user)
+    url = reverse("admin-users-verify", args=[customer_user.id])
+    response = client.patch(url, {"is_verified": False})
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    customer_user.refresh_from_db()
+    assert customer_user.is_verified is True  # UserFactory default — untouched
+
+
+def test_cannot_verify_admin_account(auth_client, admin_user):
+    other_admin = UserFactory(role=UserRole.ADMIN, is_staff=True)
+    client = auth_client(admin_user)
+    url = reverse("admin-users-verify", args=[other_admin.id])
+    response = client.patch(url, {"is_verified": True})
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_cannot_verify_unknown_user(auth_client, admin_user):
+    client = auth_client(admin_user)
+    url = reverse("admin-users-verify", args=[uuid.uuid4()])
+    response = client.patch(url, {"is_verified": True})
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_non_admin_cannot_verify(auth_client, customer_user, mechanic_user):
+    client = auth_client(customer_user)
+    url = reverse("admin-users-verify", args=[mechanic_user.id])
+    response = client.patch(url, {"is_verified": True})
+    assert response.status_code == status.HTTP_403_FORBIDDEN

@@ -235,6 +235,17 @@ export interface PartsSourcingRequest {
   created_at: string;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  phone: string;
+  full_name: string;
+  role: UserRole;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+}
+
 export interface AdminAnalytics {
   orders_by_status: Record<string, number>;
   service_requests_by_status: Record<string, number>;
