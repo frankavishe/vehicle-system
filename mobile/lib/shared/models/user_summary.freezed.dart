@@ -22,6 +22,7 @@ UserSummary _$UserSummaryFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$UserSummary {
   String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'full_name')
   String get fullName => throw _privateConstructorUsedError;
   String get phone => throw _privateConstructorUsedError;
 
@@ -42,7 +43,11 @@ abstract class $UserSummaryCopyWith<$Res> {
     $Res Function(UserSummary) then,
   ) = _$UserSummaryCopyWithImpl<$Res, UserSummary>;
   @useResult
-  $Res call({String id, String fullName, String phone});
+  $Res call({
+    String id,
+    @JsonKey(name: 'full_name') String fullName,
+    String phone,
+  });
 }
 
 /// @nodoc
@@ -93,7 +98,11 @@ abstract class _$$UserSummaryImplCopyWith<$Res>
   ) = __$$UserSummaryImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String fullName, String phone});
+  $Res call({
+    String id,
+    @JsonKey(name: 'full_name') String fullName,
+    String phone,
+  });
 }
 
 /// @nodoc
@@ -138,7 +147,7 @@ class __$$UserSummaryImplCopyWithImpl<$Res>
 class _$UserSummaryImpl implements _UserSummary {
   const _$UserSummaryImpl({
     required this.id,
-    required this.fullName,
+    @JsonKey(name: 'full_name') required this.fullName,
     required this.phone,
   });
 
@@ -148,6 +157,7 @@ class _$UserSummaryImpl implements _UserSummary {
   @override
   final String id;
   @override
+  @JsonKey(name: 'full_name')
   final String fullName;
   @override
   final String phone;
@@ -189,7 +199,7 @@ class _$UserSummaryImpl implements _UserSummary {
 abstract class _UserSummary implements UserSummary {
   const factory _UserSummary({
     required final String id,
-    required final String fullName,
+    @JsonKey(name: 'full_name') required final String fullName,
     required final String phone,
   }) = _$UserSummaryImpl;
 
@@ -199,6 +209,7 @@ abstract class _UserSummary implements UserSummary {
   @override
   String get id;
   @override
+  @JsonKey(name: 'full_name')
   String get fullName;
   @override
   String get phone;

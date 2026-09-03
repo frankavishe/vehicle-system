@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import '../../../core/api/autoserve_api.dart';
 import '../../../shared/models/service_request.dart';
@@ -9,7 +11,12 @@ import 'my_requests_screen.dart';
 
 /// GPS pickup via geolocator (flagged, not named in PLAN §6); dropoff
 /// only collected for RECOVERY, per the backend's dropoff-required-for-
-/// RECOVERY validation (apps/dispatch/serializers.py).
+/// RECOVERY validation (apps/dispatch/serializers.py). Drop-off also
+/// offers "Pick on map" (LocationPickerScreen) alongside GPS capture —
+/// unlike pickup, which is always wherever the customer is standing
+/// right now, drop-off is very often somewhere else entirely (the garage
+/// the vehicle is being towed to), so a plain GPS capture can't express
+/// it.
 class RequestServiceScreen extends ConsumerStatefulWidget {
   const RequestServiceScreen({super.key});
 
@@ -20,8 +27,8 @@ class RequestServiceScreen extends ConsumerStatefulWidget {
 class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
   ServiceType _serviceType = ServiceType.mechanic;
   final _description = TextEditingController();
-  Position? _pickup;
-  Position? _dropoff;
+  ll.LatLng? _pickup;
+  ll.LatLng? _dropoff;
   bool _locating = false;
   bool _submitting = false;
   String? _error;
@@ -32,7 +39,7 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
     super.dispose();
   }
 
-  Future<Position?> _getCurrentPosition() async {
+  Future<ll.LatLng?> _getCurrentPosition() async {
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -45,7 +52,8 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
       setState(() => _error = 'Please enable location services.');
       return null;
     }
-    return Geolocator.getCurrentPosition();
+    final position = await Geolocator.getCurrentPosition();
+    return ll.LatLng(position.latitude, position.longitude);
   }
 
   Future<void> _capturePickup() async {
@@ -70,6 +78,21 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
       _dropoff = position;
       _locating = false;
     });
+  }
+
+  /// Opens LocationPickerScreen (centered on pickup if we have it — the
+  /// garage being towed to is usually somewhere near where the vehicle
+  /// broke down, not on the opposite side of the map) and waits for the
+  /// user to drop a pin, rather than assuming drop-off is wherever this
+  /// device currently is.
+  Future<void> _pickDropoffOnMap() async {
+    final picked = await context.push<ll.LatLng>('/customer/pick-location', extra: _pickup);
+    if (picked != null && mounted) {
+      setState(() {
+        _dropoff = picked;
+        _error = null;
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -150,6 +173,7 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
             position: _dropoff,
             loading: _locating,
             onCapture: _captureDropoff,
+            onPickMap: _pickDropoffOnMap,
           ),
         ],
         if (_error != null) ...[
@@ -174,12 +198,16 @@ class _LocationTile extends StatelessWidget {
     required this.position,
     required this.loading,
     required this.onCapture,
+    this.onPickMap,
   });
 
   final String label;
-  final Position? position;
+  final ll.LatLng? position;
   final bool loading;
   final VoidCallback onCapture;
+  // Only drop-off passes this — pickup is always "wherever the customer
+  // currently is", so map-picking it wouldn't make sense.
+  final VoidCallback? onPickMap;
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +222,14 @@ class _LocationTile extends StatelessWidget {
         ),
         trailing: loading
             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : TextButton(onPressed: onCapture, child: const Text('Capture')),
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onPickMap != null)
+                    TextButton(onPressed: onPickMap, child: const Text('Pick on map')),
+                  TextButton(onPressed: onCapture, child: const Text('Capture')),
+                ],
+              ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import '../../features/admin/screens/admin_shell.dart';
 import '../../features/admin/screens/dispute_detail_screen.dart';
@@ -9,6 +10,7 @@ import '../../features/admin/screens/payout_trigger_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/customer/screens/customer_shell.dart';
+import '../../features/customer/screens/location_picker_screen.dart';
 import '../../features/customer/screens/request_detail_screen.dart';
 import '../../features/provider/screens/provider_job_detail_screen.dart';
 import '../../features/provider/screens/provider_shell.dart';
@@ -94,6 +96,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'requests/:id',
             builder: (context, state) =>
                 RequestDetailScreen(requestId: state.pathParameters['id']!),
+          ),
+          // Pushed (not a shell tab) and returns its result via
+          // `context.pop(ll.LatLng)` — see LocationPickerScreen's
+          // docstring for why request_service_screen.dart needs this
+          // instead of only Geolocator.getCurrentPosition().
+          GoRoute(
+            path: 'pick-location',
+            builder: (context, state) =>
+                LocationPickerScreen(initialCenter: state.extra as ll.LatLng?),
           ),
           // Nested per-role (not one shared top-level route) because
           // computeRedirect above confines every authenticated user to

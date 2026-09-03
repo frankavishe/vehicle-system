@@ -9,7 +9,7 @@ part 'user_summary.g.dart';
 class UserSummary with _$UserSummary {
   const factory UserSummary({
     required String id,
-    required String fullName,
+    @JsonKey(name: 'full_name') required String fullName,
     required String phone,
   }) = _UserSummary;
 
