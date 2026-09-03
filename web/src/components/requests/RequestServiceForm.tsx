@@ -6,9 +6,15 @@ import type { FormEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Select, Textarea } from "@/components/ui/Field";
+import { LocationPickerMapClientOnly } from "@/components/requests/LocationPickerMapClientOnly";
 import { apiFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import type { LatLng, ServiceRequest, ServiceType } from "@/lib/types";
+
+// Dar es Salaam — matches the backend's own test/demo fixture
+// (apps/dispatch/tests/factories.py's DAR_ES_SALAAM), used to center the
+// drop-off map when pickup hasn't been captured yet.
+const FALLBACK_CENTER: LatLng = { lat: -6.7924, lng: 39.2083 };
 
 const SERVICE_TYPES: { value: ServiceType; label: string }[] = [
   { value: "MECHANIC", label: "Mechanic — fix it where I am" },
@@ -42,6 +48,10 @@ export function RequestServiceForm() {
   const [locating, setLocating] = useState<"pickup" | "dropoff" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Whether the inline drop-off map picker is expanded. Only drop-off gets
+  // this — pickup is always "wherever the customer currently is", so
+  // map-picking it wouldn't make sense — see LocationField's onPickMap doc.
+  const [pickingDropoff, setPickingDropoff] = useState(false);
 
   async function capture(which: "pickup" | "dropoff") {
     setLocating(which);
@@ -99,6 +109,7 @@ export function RequestServiceForm() {
           onChange={(e) => {
             setServiceType(e.target.value as ServiceType);
             setDropoff(null);
+            setPickingDropoff(false);
           }}
         >
           {SERVICE_TYPES.map((t) => (
@@ -127,12 +138,41 @@ export function RequestServiceForm() {
       />
 
       {serviceType === "RECOVERY" && (
-        <LocationField
-          label="Drop-off location"
-          position={dropoff}
-          loading={locating === "dropoff"}
-          onCapture={() => capture("dropoff")}
-        />
+        <>
+          <LocationField
+            label="Drop-off location"
+            position={dropoff}
+            loading={locating === "dropoff"}
+            onCapture={() => capture("dropoff")}
+            onPickMap={() => setPickingDropoff((v) => !v)}
+          />
+          {pickingDropoff && (
+            <div className="flex flex-col gap-2 border border-line bg-surface-raised p-3">
+              <p className="text-sm text-steel-soft">
+                Click the map to drop a pin — useful when the vehicle is broken down somewhere
+                other than where the tow should end up (e.g. a garage across town).
+              </p>
+              <LocationPickerMapClientOnly
+                center={pickup ?? FALLBACK_CENTER}
+                picked={dropoff}
+                onPick={setDropoff}
+              />
+              <div className="flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={locating === "dropoff"}
+                  onClick={() => capture("dropoff")}
+                >
+                  {locating === "dropoff" ? "Locating…" : "Use my current location"}
+                </Button>
+                <Button type="button" disabled={!dropoff} onClick={() => setPickingDropoff(false)}>
+                  Use this location
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {error ? <p className="text-sm text-stop">{error}</p> : null}
@@ -149,11 +189,17 @@ function LocationField({
   position,
   loading,
   onCapture,
+  onPickMap,
 }: {
   label: string;
   position: LatLng | null;
   loading: boolean;
   onCapture: () => void;
+  // Only drop-off passes this — pickup is always "wherever the customer
+  // currently is" (Geolocation only), so map-picking it wouldn't make
+  // sense. Mirrors mobile/lib/.../request_service_screen.dart's
+  // _LocationTile.onPickMap.
+  onPickMap?: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 border border-line bg-surface-raised p-3">
@@ -163,9 +209,16 @@ function LocationField({
           {position ? `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : "Not captured yet"}
         </span>
       </div>
-      <Button type="button" variant="ghost" disabled={loading} onClick={onCapture}>
-        {loading ? "Locating…" : "Capture"}
-      </Button>
+      <div className="flex items-center gap-2">
+        {onPickMap && (
+          <Button type="button" variant="ghost" onClick={onPickMap}>
+            Pick on map
+          </Button>
+        )}
+        <Button type="button" variant="ghost" disabled={loading} onClick={onCapture}>
+          {loading ? "Locating…" : "Capture"}
+        </Button>
+      </div>
     </div>
   );
 }
