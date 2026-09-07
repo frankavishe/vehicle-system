@@ -7,6 +7,9 @@ import 'package:latlong2/latlong.dart' as ll;
 
 import '../../../core/api/autoserve_api.dart';
 import '../../../shared/models/service_request.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/app_text_field.dart';
 import 'my_requests_screen.dart';
 
 /// GPS pickup via geolocator (flagged, not named in PLAN §6); dropoff
@@ -110,7 +113,9 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
       _error = null;
     });
     try {
-      await ref.read(autoserveApiProvider).createServiceRequest(
+      await ref
+          .read(autoserveApiProvider)
+          .createServiceRequest(
             serviceType: _serviceType,
             pickupLat: _pickup!.latitude,
             pickupLng: _pickup!.longitude,
@@ -125,9 +130,9 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
         _dropoff = null;
         _description.clear();
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request sent — nearby providers have been notified.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Request sent — nearby providers have been notified.')));
     } on DioException catch (e) {
       setState(() => _error = e.response?.data?['detail']?.toString() ?? 'Could not send request.');
     } finally {
@@ -144,20 +149,20 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
           segments: const [
             ButtonSegment(value: ServiceType.mechanic, label: Text('Mechanic'), icon: Icon(Icons.build)),
             ButtonSegment(
-                value: ServiceType.recovery, label: Text('Towing'), icon: Icon(Icons.local_shipping)),
+              value: ServiceType.recovery,
+              label: Text('Towing'),
+              icon: Icon(Icons.local_shipping),
+            ),
           ],
           selected: {_serviceType},
           onSelectionChanged: (s) => setState(() => _serviceType = s.first),
         ),
         const SizedBox(height: 20),
-        TextField(
+        AppTextField(
+          label: "What's wrong?",
           controller: _description,
           maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'What\'s wrong?',
-            hintText: 'e.g. Flat tyre, engine won\'t start...',
-            border: OutlineInputBorder(),
-          ),
+          hintText: "e.g. Flat tyre, engine won't start...",
         ),
         const SizedBox(height: 20),
         _LocationTile(
@@ -181,11 +186,11 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
           Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
         const SizedBox(height: 24),
-        FilledButton(
+        AppButton(
+          label: 'Request now',
           onPressed: _submitting ? null : _submit,
-          child: _submitting
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Request now'),
+          loading: _submitting,
+          expand: true,
         ),
       ],
     );
@@ -211,25 +216,38 @@ class _LocationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.my_location),
-        title: Text(label),
-        subtitle: Text(
-          position == null
-              ? 'Not captured yet'
-              : '${position!.latitude.toStringAsFixed(5)}, ${position!.longitude.toStringAsFixed(5)}',
-        ),
-        trailing: loading
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (onPickMap != null)
-                    TextButton(onPressed: onPickMap, child: const Text('Pick on map')),
-                  TextButton(onPressed: onCapture, child: const Text('Capture')),
-                ],
-              ),
+    return AppCard(
+      padding: AppCardPadding.sm,
+      child: Row(
+        children: [
+          const Icon(Icons.my_location),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  position == null
+                      ? 'Not captured yet'
+                      : '${position!.latitude.toStringAsFixed(5)}, ${position!.longitude.toStringAsFixed(5)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          if (loading)
+            const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+          else
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onPickMap != null) TextButton(onPressed: onPickMap, child: const Text('Pick on map')),
+                TextButton(onPressed: onCapture, child: const Text('Capture')),
+              ],
+            ),
+        ],
       ),
     );
   }

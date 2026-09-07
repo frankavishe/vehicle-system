@@ -39,11 +39,14 @@ class NotificationsScreen extends ConsumerWidget {
               return ListTile(
                 leading: Icon(
                   n.read ? Icons.notifications_none : Icons.notifications_active,
-                  color: n.read ? null : Theme.of(context).colorScheme.primary,
+                  color: n.read ? null : Theme.of(context).colorScheme.secondary,
                 ),
-                title: Text(n.title, style: TextStyle(fontWeight: n.read ? FontWeight.normal : FontWeight.bold)),
+                title: Text(
+                  n.title,
+                  style: TextStyle(fontWeight: n.read ? FontWeight.normal : FontWeight.bold),
+                ),
                 subtitle: Text(n.body),
-                trailing: Text(n.category.name),
+                trailing: Text(n.category.name, style: Theme.of(context).textTheme.labelSmall),
                 onTap: () async {
                   if (!n.read) {
                     await ref.read(autoserveApiProvider).markNotificationRead(n.id);

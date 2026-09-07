@@ -11,6 +11,13 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
+  # Design-system typography — Plus Jakarta Sans (display) + Inter (body)
+  # + IBM Plex Mono (fitment/SKU tag one-off), matching web/'s globals.css
+  # font stack. Runtime-fetches font files on first use by default; the
+  # app is already network-dependent end-to-end so this is acceptable —
+  # pre-bundling as local assets is a possible offline-hardening follow-up.
+  google_fonts: ^6.2.1
+
   # State management — compile-time-safe DI, no BuildContext coupling
   # (needed since auth/role state must be readable from background FCM
   # handlers and go_router's redirect guards). PLAN.md §6 only names

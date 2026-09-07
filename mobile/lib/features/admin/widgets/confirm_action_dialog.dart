@@ -21,10 +21,7 @@ Future<bool> confirmAdminAction(
       title: Text(title),
       content: Text(message),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
+        TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
         FilledButton(
           style: destructive
               ? FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error)

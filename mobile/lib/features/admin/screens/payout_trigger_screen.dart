@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/autoserve_api.dart';
 import '../../../shared/models/admin_user_summary_dto.dart';
 import '../../../shared/models/payout_dto.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
 import '../widgets/confirm_action_dialog.dart';
 
 /// spec.md FR-006 — manual/off-cycle payout for a specific provider.
@@ -63,7 +66,8 @@ class _PayoutTriggerScreenState extends ConsumerState<PayoutTriggerScreen> {
     final confirmed = await confirmAdminAction(
       context,
       title: 'Trigger manual payout?',
-      message: 'This triggers an off-cycle payout for ${provider.fullName} covering their completed, '
+      message:
+          'This triggers an off-cycle payout for ${provider.fullName} covering their completed, '
           'unpaid jobs.',
       confirmLabel: 'Trigger payout',
     );
@@ -87,8 +91,8 @@ class _PayoutTriggerScreenState extends ConsumerState<PayoutTriggerScreen> {
       setState(() {
         _message = e.response?.statusCode == 404
             ? (e.response?.data is Map
-                ? (e.response?.data['detail']?.toString() ?? 'Nothing outstanding to pay out.')
-                : 'Nothing outstanding to pay out.')
+                  ? (e.response?.data['detail']?.toString() ?? 'Nothing outstanding to pay out.')
+                  : 'Nothing outstanding to pay out.')
             : 'Could not trigger this payout.';
       });
     } finally {
@@ -106,20 +110,14 @@ class _PayoutTriggerScreenState extends ConsumerState<PayoutTriggerScreen> {
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child: AppTextField(
+                  label: 'Search provider by name or email',
                   controller: _controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Search provider by name or email',
-                    border: OutlineInputBorder(),
-                  ),
                   onSubmitted: _search,
                 ),
               ),
               const SizedBox(width: 8),
-              FilledButton(
-                onPressed: _busy ? null : () => _search(_controller.text),
-                child: const Text('Search'),
-              ),
+              AppButton(label: 'Search', onPressed: _busy ? null : () => _search(_controller.text)),
             ],
           ),
           const SizedBox(height: 16),
@@ -146,15 +144,16 @@ class _PayoutTriggerScreenState extends ConsumerState<PayoutTriggerScreen> {
                 ListTile(
                   title: Text('${payout.amount} — ${payout.status.name}'),
                   subtitle: Text(payout.isManual ? 'Manual' : 'Scheduled'),
+                  trailing: AppBadge.status(payout.status.name.toUpperCase()),
                 ),
             const SizedBox(height: 16),
             if (_message != null) Text(_message!),
             const SizedBox(height: 8),
-            FilledButton(
+            AppButton(
+              label: 'Trigger manual payout',
               onPressed: _busy ? null : _trigger,
-              child: _busy
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Trigger manual payout'),
+              loading: _busy,
+              expand: true,
             ),
           ],
         ],

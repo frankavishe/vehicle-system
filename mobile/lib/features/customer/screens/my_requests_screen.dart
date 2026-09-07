@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/service_request.dart';
+import '../../../shared/widgets/app_badge.dart';
 
 final myRequestsProvider = FutureProvider.autoDispose<List<ServiceRequestDto>>((ref) {
   return ref.watch(autoserveApiProvider).listServiceRequests();
@@ -47,10 +47,7 @@ class MyRequestsScreen extends ConsumerWidget {
                 leading: Icon(r.serviceType == ServiceType.mechanic ? Icons.build : Icons.local_shipping),
                 title: Text(r.serviceType == ServiceType.mechanic ? 'Mechanic' : 'Towing'),
                 subtitle: Text(r.problemDescription ?? 'No description'),
-                trailing: Chip(
-                  label: Text(r.status.name),
-                  backgroundColor: statusColor(_wireStatus(r.status)).withValues(alpha: 0.15),
-                ),
+                trailing: AppBadge.status(_wireStatus(r.status)),
                 onTap: () => context.go('/customer/requests/${r.id}'),
               );
             },

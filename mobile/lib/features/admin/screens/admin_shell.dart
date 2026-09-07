@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/app_scaffold_shell.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../shell/shell_tab_index.dart';
 import 'dispute_list_screen.dart';
@@ -20,26 +21,23 @@ class AdminShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(shellTabIndexProvider);
-    const tabs = [
-      DisputeListScreen(),
-      OversightScreen(),
-      ModerationScreen(),
-      ProfileScreen(),
-    ];
+    const tabs = [DisputeListScreen(), OversightScreen(), ModerationScreen(), ProfileScreen()];
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Admin · ${_titles[index]}')),
-      body: IndexedStack(index: index, children: tabs),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => ref.read(shellTabIndexProvider.notifier).state = i,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.report_problem_outlined), label: 'Disputes'),
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Oversight'),
-          NavigationDestination(icon: Icon(Icons.shield_outlined), label: 'Moderation'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+    return AppScaffoldShell(
+      title: 'Admin · ${_titles[index]}',
+      selectedIndex: index,
+      onDestinationSelected: (i) => ref.read(shellTabIndexProvider.notifier).state = i,
+      tabs: tabs,
+      destinations: const [
+        AppNavDestination(
+          icon: Icons.report_problem_outlined,
+          selectedIcon: Icons.report_problem,
+          label: 'Disputes',
+        ),
+        AppNavDestination(icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Oversight'),
+        AppNavDestination(icon: Icons.shield_outlined, selectedIcon: Icons.shield, label: 'Moderation'),
+        AppNavDestination(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile'),
+      ],
     );
   }
 }

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/autoserve_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/dispute_dto.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
 import '../widgets/confirm_action_dialog.dart';
 
 final _disputeDetailProvider = FutureProvider.autoDispose.family<DisputeDto, String>((ref, id) {
@@ -12,15 +14,21 @@ final _disputeDetailProvider = FutureProvider.autoDispose.family<DisputeDto, Str
   // GET /admin/disputes/{id} exists — research.md §3) — filtering the
   // list to one id keeps this screen on the same single source of truth
   // the list screen already fetched from.
-  return ref.watch(autoserveApiProvider).listDisputes().then(
-        (all) => all.firstWhere((d) => d.id == id, orElse: () => throw DioException(
+  return ref
+      .watch(autoserveApiProvider)
+      .listDisputes()
+      .then(
+        (all) => all.firstWhere(
+          (d) => d.id == id,
+          orElse: () => throw DioException(
+            requestOptions: RequestOptions(path: '/admin/disputes/$id'),
+            response: Response(
               requestOptions: RequestOptions(path: '/admin/disputes/$id'),
-              response: Response(
-                requestOptions: RequestOptions(path: '/admin/disputes/$id'),
-                statusCode: 404,
-                data: {'detail': 'Dispute not found.'},
-              ),
-            )),
+              statusCode: 404,
+              data: {'detail': 'Dispute not found.'},
+            ),
+          ),
+        ),
       );
 });
 
@@ -104,10 +112,7 @@ class _DisputeDetailBodyState extends ConsumerState<_DisputeDetailBody> {
           children: [
             Text('Dispute', style: Theme.of(context).textTheme.titleLarge),
             const Spacer(),
-            Chip(
-              label: Text(d.status.name.toUpperCase()),
-              backgroundColor: statusColor(isOpen ? 'PENDING' : 'COMPLETED').withValues(alpha: 0.15),
-            ),
+            AppBadge(label: d.status.name.toUpperCase(), tone: isOpen ? AppTone.neutral : AppTone.go),
           ],
         ),
         const SizedBox(height: 16),
@@ -133,12 +138,7 @@ class _DisputeDetailBodyState extends ConsumerState<_DisputeDetailBody> {
         ],
         const SizedBox(height: 24),
         if (isOpen)
-          FilledButton(
-            onPressed: _busy ? null : _resolve,
-            child: _busy
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Resolve'),
-          ),
+          AppButton(label: 'Resolve', onPressed: _busy ? null : _resolve, loading: _busy, expand: true),
       ],
     );
   }

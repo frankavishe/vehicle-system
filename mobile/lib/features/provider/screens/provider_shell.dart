@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/app_scaffold_shell.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../shell/shell_tab_index.dart';
@@ -27,19 +28,21 @@ class ProviderShell extends ConsumerWidget {
       const ProfileScreen(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(title: Text('${role == 'MECHANIC' ? 'Mechanic' : 'Recovery'} · ${_titles[index]}')),
-      body: IndexedStack(index: index, children: tabs),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => ref.read(shellTabIndexProvider.notifier).state = i,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.work), label: 'Jobs'),
-          NavigationDestination(icon: Icon(Icons.description), label: 'Docs'),
-          NavigationDestination(icon: Icon(Icons.notifications), label: 'Alerts'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+    return AppScaffoldShell(
+      title: '${role == 'MECHANIC' ? 'Mechanic' : 'Recovery'} · ${_titles[index]}',
+      selectedIndex: index,
+      onDestinationSelected: (i) => ref.read(shellTabIndexProvider.notifier).state = i,
+      tabs: tabs,
+      destinations: const [
+        AppNavDestination(icon: Icons.work_outline, selectedIcon: Icons.work, label: 'Jobs'),
+        AppNavDestination(icon: Icons.description_outlined, selectedIcon: Icons.description, label: 'Docs'),
+        AppNavDestination(
+          icon: Icons.notifications_outlined,
+          selectedIcon: Icons.notifications,
+          label: 'Alerts',
+        ),
+        AppNavDestination(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile'),
+      ],
     );
   }
 }

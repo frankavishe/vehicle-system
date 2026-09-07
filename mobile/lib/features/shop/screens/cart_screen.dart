@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/models/cart_dto.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_card.dart';
 import '../cart_controller.dart';
 
 class CartScreen extends ConsumerWidget {
@@ -32,7 +34,7 @@ class CartScreen extends ConsumerWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: c.items.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, i) => _CartItemTile(item: c.items[i]),
                 ),
               ),
@@ -52,12 +54,20 @@ class _CartItemTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(cartControllerProvider.notifier);
-    return ListTile(
-      title: Text(item.sparePart.title),
-      subtitle: Text('TZS ${item.sparePart.price}'),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+    return AppCard(
+      padding: AppCardPadding.sm,
+      child: Row(
         children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(item.sparePart.title, style: Theme.of(context).textTheme.titleSmall),
+                Text('TZS ${item.sparePart.price}', style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.remove),
             onPressed: item.quantity > 1
@@ -71,10 +81,7 @@ class _CartItemTile extends ConsumerWidget {
                 ? () => controller.updateQuantity(item.id, item.quantity + 1)
                 : null,
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => controller.remove(item.id),
-          ),
+          IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => controller.remove(item.id)),
         ],
       ),
     );
@@ -100,10 +107,7 @@ class _CartSummary extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          FilledButton(
-            onPressed: () => context.push('/customer/checkout'),
-            child: const Text('Checkout'),
-          ),
+          AppButton(label: 'Checkout', onPressed: () => context.push('/customer/checkout'), expand: true),
         ],
       ),
     );

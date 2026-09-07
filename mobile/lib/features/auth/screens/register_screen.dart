@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_state.dart';
 import '../../../shared/models/app_user.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -33,11 +35,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   String _roleWireValue(UserRole role) => switch (role) {
-        UserRole.customer => 'CUSTOMER',
-        UserRole.mechanic => 'MECHANIC',
-        UserRole.recovery => 'RECOVERY',
-        UserRole.admin => 'ADMIN', // unreachable — not offered below
-      };
+    UserRole.customer => 'CUSTOMER',
+    UserRole.mechanic => 'MECHANIC',
+    UserRole.recovery => 'RECOVERY',
+    UserRole.admin => 'ADMIN', // unreachable — not offered below
+  };
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -46,7 +48,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _error = null;
     });
     try {
-      await ref.read(authControllerProvider.notifier).register(
+      await ref
+          .read(authControllerProvider.notifier)
+          .register(
             email: _email.text.trim(),
             phone: _phone.text.trim(),
             fullName: _fullName.text.trim(),
@@ -85,42 +89,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextFormField(
+                    AppTextField(
+                      label: 'Full name',
                       controller: _fullName,
-                      decoration: const InputDecoration(labelText: 'Full name'),
                       validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
+                      label: 'Email',
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email'),
                       validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
+                      label: 'Phone',
                       controller: _phone,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone',
-                        hintText: '0712345678 or 255712345678',
-                      ),
+                      hintText: '0712345678 or 255712345678',
                       validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
+                      label: 'Password',
                       controller: _password,
                       obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Password'),
-                      validator: (v) =>
-                          (v == null || v.length < 8) ? 'At least 8 characters' : null,
+                      validator: (v) => (v == null || v.length < 8) ? 'At least 8 characters' : null,
                     ),
                     const SizedBox(height: 16),
                     // Role picker restricted to SELF_SERVICE_ROLES — ADMIN
                     // is never self-service (apps/users/models.py).
-                    DropdownButtonFormField<UserRole>(
-                      initialValue: _role,
-                      decoration: const InputDecoration(labelText: 'I am a...'),
+                    AppDropdownField<UserRole>(
+                      label: 'I am a...',
+                      value: _role,
                       items: selfServiceRoles
                           .map((r) => DropdownMenuItem(value: r, child: Text(_roleLabel(r))))
                           .toList(),
@@ -131,12 +132,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                     ],
                     const SizedBox(height: 24),
-                    FilledButton(
+                    AppButton(
+                      label: 'Create account',
                       onPressed: _loading ? null : _submit,
-                      child: _loading
-                          ? const SizedBox(
-                              height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Create account'),
+                      loading: _loading,
+                      expand: true,
                     ),
                     const SizedBox(height: 12),
                     TextButton(
@@ -154,9 +154,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   String _roleLabel(UserRole role) => switch (role) {
-        UserRole.customer => 'Customer',
-        UserRole.mechanic => 'Mechanic',
-        UserRole.recovery => 'Recovery Operator',
-        UserRole.admin => 'Admin',
-      };
+    UserRole.customer => 'Customer',
+    UserRole.mechanic => 'Mechanic',
+    UserRole.recovery => 'Recovery Operator',
+    UserRole.admin => 'Admin',
+  };
 }

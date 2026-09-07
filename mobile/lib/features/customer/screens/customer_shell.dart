@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_scaffold_shell.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../shell/shell_tab_index.dart';
@@ -31,23 +32,23 @@ class CustomerShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(shellTabIndexProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[index]),
-        actions: index == _shopTabIndex ? const [_OrdersAction(), _CartAction()] : null,
-      ),
-      body: IndexedStack(index: index, children: _tabs),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => ref.read(shellTabIndexProvider.notifier).state = i,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.add_road), label: 'Request'),
-          NavigationDestination(icon: Icon(Icons.list_alt), label: 'Requests'),
-          NavigationDestination(icon: Icon(Icons.notifications), label: 'Alerts'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-          NavigationDestination(icon: Icon(Icons.storefront), label: 'Shop'),
-        ],
-      ),
+    return AppScaffoldShell(
+      title: _titles[index],
+      actions: index == _shopTabIndex ? const [_OrdersAction(), _CartAction()] : null,
+      selectedIndex: index,
+      onDestinationSelected: (i) => ref.read(shellTabIndexProvider.notifier).state = i,
+      tabs: _tabs,
+      destinations: const [
+        AppNavDestination(icon: Icons.add_road_outlined, selectedIcon: Icons.add_road, label: 'Request'),
+        AppNavDestination(icon: Icons.list_alt_outlined, selectedIcon: Icons.list_alt, label: 'Requests'),
+        AppNavDestination(
+          icon: Icons.notifications_outlined,
+          selectedIcon: Icons.notifications,
+          label: 'Alerts',
+        ),
+        AppNavDestination(icon: Icons.person_outline, selectedIcon: Icons.person, label: 'Profile'),
+        AppNavDestination(icon: Icons.storefront_outlined, selectedIcon: Icons.storefront, label: 'Shop'),
+      ],
     );
   }
 }

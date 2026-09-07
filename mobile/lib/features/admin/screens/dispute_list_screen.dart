@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/autoserve_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/dispute_dto.dart';
+import '../../../shared/widgets/app_badge.dart';
 import '../widgets/staleness_banner.dart';
 
 final _openDisputesProvider = FutureProvider.autoDispose<List<DisputeDto>>((ref) {
@@ -99,11 +100,14 @@ class _DisputeListScreenState extends ConsumerState<DisputeListScreen> {
                             ? 'Dispute'
                             : '${job.serviceType == 'MECHANIC' ? 'Mechanic' : 'Towing'} job — ${job.customerName ?? 'unknown customer'}',
                       ),
-                      subtitle: Text(d.reason ?? 'No reason given', maxLines: 2, overflow: TextOverflow.ellipsis),
-                      trailing: Chip(
-                        label: Text(d.status.name.toUpperCase()),
-                        backgroundColor: statusColor(d.status == DisputeStatus.open ? 'PENDING' : 'COMPLETED')
-                            .withValues(alpha: 0.15),
+                      subtitle: Text(
+                        d.reason ?? 'No reason given',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: AppBadge(
+                        label: d.status.name.toUpperCase(),
+                        tone: d.status == DisputeStatus.open ? AppTone.neutral : AppTone.go,
                       ),
                       onTap: () => context.push('/admin/disputes/${d.id}'),
                     );

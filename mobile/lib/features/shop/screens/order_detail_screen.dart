@@ -5,17 +5,17 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/api/autoserve_api.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/order_dto.dart';
 import '../../../shared/models/order_shipment_dto.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
 import 'my_orders_screen.dart';
 
 final _orderDetailProvider = FutureProvider.autoDispose.family<OrderDto, String>((ref, id) {
   return ref.watch(autoserveApiProvider).getOrder(id);
 });
 
-final _orderShipmentProvider =
-    FutureProvider.autoDispose.family<OrderShipmentDto?, String>((ref, id) {
+final _orderShipmentProvider = FutureProvider.autoDispose.family<OrderShipmentDto?, String>((ref, id) {
   return ref.watch(autoserveApiProvider).getOrderShipment(id);
 });
 
@@ -57,10 +57,9 @@ class _OrderDetailBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shipment =
-        order.status == OrderStatus.dispatched || order.status == OrderStatus.delivered
-            ? ref.watch(_orderShipmentProvider(order.id))
-            : null;
+    final shipment = order.status == OrderStatus.dispatched || order.status == OrderStatus.delivered
+        ? ref.watch(_orderShipmentProvider(order.id))
+        : null;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -69,11 +68,7 @@ class _OrderDetailBody extends ConsumerWidget {
           children: [
             Text('Order #${order.id.substring(0, 8)}', style: Theme.of(context).textTheme.titleLarge),
             const Spacer(),
-            Chip(
-              label: Text(order.status.name),
-              backgroundColor:
-                  statusColor(orderStatusWireValue(order.status)).withValues(alpha: 0.15),
-            ),
+            AppBadge.status(orderStatusWireValue(order.status)),
           ],
         ),
         if (order.deliveryAddress != null) ...[
@@ -134,7 +129,12 @@ class _OrderDetailBody extends ConsumerWidget {
           // consumed and checkout() can't be replayed.
           _PayNowSection(orderId: order.id),
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: () => _cancel(context, ref), child: const Text('Cancel order')),
+          AppButton(
+            label: 'Cancel order',
+            variant: AppButtonVariant.ghost,
+            onPressed: () => _cancel(context, ref),
+            expand: true,
+          ),
         ],
       ],
     );
@@ -193,12 +193,7 @@ class _PayNowSectionState extends ConsumerState<_PayNowSection> {
           Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
         const SizedBox(height: 12),
-        FilledButton(
-          onPressed: _submitting ? null : _pay,
-          child: _submitting
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Pay now'),
-        ),
+        AppButton(label: 'Pay now', onPressed: _submitting ? null : _pay, loading: _submitting, expand: true),
       ],
     );
   }

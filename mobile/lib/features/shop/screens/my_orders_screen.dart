@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/order_dto.dart';
+import '../../../shared/widgets/app_badge.dart';
 
 final myOrdersProvider = FutureProvider.autoDispose<List<OrderDto>>((ref) {
   return ref.watch(autoserveApiProvider).listOrders();
@@ -57,10 +57,7 @@ class MyOrdersScreen extends ConsumerWidget {
                   leading: const Icon(Icons.shopping_bag_outlined),
                   title: Text('Order #${o.id.substring(0, 8)}'),
                   subtitle: Text('$itemCount item${itemCount == 1 ? '' : 's'} · TZS ${o.totalAmount}'),
-                  trailing: Chip(
-                    label: Text(o.status.name),
-                    backgroundColor: statusColor(orderStatusWireValue(o.status)).withValues(alpha: 0.15),
-                  ),
+                  trailing: AppBadge.status(orderStatusWireValue(o.status)),
                   onTap: () => context.push('/customer/orders/${o.id}'),
                 );
               },

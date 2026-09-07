@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api/autoserve_api.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/provider_document.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_card.dart';
 
 final myDocumentsProvider = FutureProvider.autoDispose<List<ProviderDocumentDto>>((ref) {
   return ref.watch(autoserveApiProvider).myDocuments();
@@ -65,14 +68,24 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               );
             }
             return ListView.separated(
+              padding: const EdgeInsets.all(16),
               itemCount: items.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, i) {
                 final d = items[i];
-                return ListTile(
-                  leading: Icon(d.verified ? Icons.verified : Icons.hourglass_top),
-                  title: Text(d.docType ?? 'Document'),
-                  subtitle: Text(d.verified ? 'Verified' : 'Pending review'),
+                return AppCard(
+                  padding: AppCardPadding.sm,
+                  child: Row(
+                    children: [
+                      Icon(d.verified ? Icons.verified : Icons.hourglass_top),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(d.docType ?? 'Document')),
+                      AppBadge(
+                        label: d.verified ? 'Verified' : 'Pending review',
+                        tone: d.verified ? AppTone.go : AppTone.neutral,
+                      ),
+                    ],
+                  ),
                 );
               },
             );

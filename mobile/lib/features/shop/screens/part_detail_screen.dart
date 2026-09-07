@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/autoserve_api.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/spare_part_summary.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/fitment_tag.dart';
 import '../cart_controller.dart';
 
 final _partDetailProvider = FutureProvider.autoDispose.family<SparePartSummary, String>((ref, id) {
@@ -48,14 +51,11 @@ class _PartDetailBodyState extends ConsumerState<_PartDetailBody> {
   Future<void> _addToCart() async {
     setState(() => _adding = true);
     try {
-      await ref.read(cartControllerProvider.notifier).add(
-            sparePartId: widget.part.id,
-            quantity: _quantity,
-          );
+      await ref.read(cartControllerProvider.notifier).add(sparePartId: widget.part.id, quantity: _quantity);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${widget.part.title} added to cart')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${widget.part.title} added to cart')));
     } finally {
       if (mounted) setState(() => _adding = false);
     }
@@ -77,18 +77,32 @@ class _PartDetailBodyState extends ConsumerState<_PartDetailBody> {
       padding: const EdgeInsets.all(16),
       children: [
         Center(
-          child: Icon(Icons.build_circle_outlined,
-              size: 96, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+          child: Icon(
+            Icons.build_circle_outlined,
+            size: 96,
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+          ),
         ),
         const SizedBox(height: 16),
         Text(p.title, style: Theme.of(context).textTheme.headlineSmall),
-        Text('SKU ${p.sku}', style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 8),
+        FitmentTag(
+          sku: p.sku,
+          make: p.compatibleMake,
+          model: p.compatibleModel,
+          yearStart: p.yearStart,
+          yearEnd: p.yearEnd,
+        ),
+        const SizedBox(height: 12),
         Text('TZS ${p.price}', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 4),
         Text(
           outOfStock ? 'Out of stock' : '${p.stockQuantity} in stock',
-          style: TextStyle(color: outOfStock ? Theme.of(context).colorScheme.error : Colors.green),
+          style: TextStyle(
+            color: outOfStock
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).extension<AppSemanticColors>()!.go,
+          ),
         ),
         if (p.vendor != null) ...[
           const SizedBox(height: 16),
@@ -122,12 +136,12 @@ class _PartDetailBodyState extends ConsumerState<_PartDetailBody> {
             ],
           ),
           const SizedBox(height: 8),
-          FilledButton.icon(
+          AppButton(
+            label: 'Add to cart',
+            icon: Icons.add_shopping_cart,
             onPressed: _adding ? null : _addToCart,
-            icon: _adding
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.add_shopping_cart),
-            label: const Text('Add to cart'),
+            loading: _adding,
+            expand: true,
           ),
         ],
       ],

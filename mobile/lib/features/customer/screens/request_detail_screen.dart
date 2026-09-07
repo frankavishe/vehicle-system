@@ -4,18 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/autoserve_api.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/parts_sourcing_request.dart';
 import '../../../shared/models/service_request.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_card.dart';
 import 'my_requests_screen.dart';
 
-final _requestDetailProvider =
-    FutureProvider.autoDispose.family<ServiceRequestDto, String>((ref, id) {
+final _requestDetailProvider = FutureProvider.autoDispose.family<ServiceRequestDto, String>((ref, id) {
   return ref.watch(autoserveApiProvider).getServiceRequest(id);
 });
 
-final _partsRequestsProvider =
-    FutureProvider.autoDispose.family<List<PartsSourcingRequestDto>, String>((ref, id) {
+final _partsRequestsProvider = FutureProvider.autoDispose.family<List<PartsSourcingRequestDto>, String>((
+  ref,
+  id,
+) {
   return ref.watch(autoserveApiProvider).listPartsRequests(id);
 });
 
@@ -29,9 +32,9 @@ bool _isCancellable(ServiceStatus status) =>
 /// actively working the job — before ACCEPTED there's no one to track,
 /// after COMPLETED/CANCELLED there's nothing live left to show.
 bool _isTrackable(ServiceStatus status) => switch (status) {
-      ServiceStatus.accepted || ServiceStatus.enRoute || ServiceStatus.inProgress => true,
-      _ => false,
-    };
+  ServiceStatus.accepted || ServiceStatus.enRoute || ServiceStatus.inProgress => true,
+  _ => false,
+};
 
 class RequestDetailScreen extends ConsumerWidget {
   const RequestDetailScreen({super.key, required this.requestId});
@@ -86,10 +89,7 @@ class _RequestDetailBody extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const Spacer(),
-            Chip(
-              label: Text(sr.status.name),
-              backgroundColor: statusColor(serviceStatusWireValue(sr.status)).withValues(alpha: 0.15),
-            ),
+            AppBadge.status(serviceStatusWireValue(sr.status)),
           ],
         ),
         const SizedBox(height: 16),
@@ -108,19 +108,27 @@ class _RequestDetailBody extends ConsumerWidget {
         if (sr.dropoffLocation != null) ...[
           const SizedBox(height: 16),
           Text('Drop-off', style: Theme.of(context).textTheme.labelLarge),
-          Text('${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}'),
+          Text(
+            '${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}',
+          ),
         ],
         if (_isTrackable(sr.status)) ...[
           const SizedBox(height: 24),
-          FilledButton.icon(
+          AppButton(
+            label: 'Track live location',
+            icon: Icons.map,
             onPressed: () => context.push('/customer/tracking/${sr.id}'),
-            icon: const Icon(Icons.map),
-            label: const Text('Track live location'),
+            expand: true,
           ),
         ],
         if (_isCancellable(sr.status)) ...[
           const SizedBox(height: 24),
-          OutlinedButton(onPressed: () => _cancel(context, ref), child: const Text('Cancel request')),
+          AppButton(
+            label: 'Cancel request',
+            variant: AppButtonVariant.ghost,
+            onPressed: () => _cancel(context, ref),
+            expand: true,
+          ),
         ],
         if (partsRequests != null) ...[
           const Divider(height: 40),
@@ -131,7 +139,9 @@ class _RequestDetailBody extends ConsumerWidget {
             error: (e, _) => const Text('Could not load parts requests.'),
             data: (items) => items.isEmpty
                 ? const Text('None yet.')
-                : Column(children: [for (final p in items) _PartsRequestTile(psr: p, serviceRequestId: sr.id)]),
+                : Column(
+                    children: [for (final p in items) _PartsRequestTile(psr: p, serviceRequestId: sr.id)],
+                  ),
           ),
         ],
       ],
@@ -181,30 +191,45 @@ class _PartsRequestTileState extends ConsumerState<_PartsRequestTile> {
   @override
   Widget build(BuildContext context) {
     final psr = widget.psr;
-    return Card(
-      child: ListTile(
-        title: Text('Qty ${psr.quantity}'),
-        subtitle: Text('Status: ${psr.status.name}'),
-        trailing: _busy
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : switch (psr.status) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppCard(
+        padding: AppCardPadding.sm,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Qty ${psr.quantity}', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  AppBadge.status(psr.status.name.toUpperCase()),
+                ],
+              ),
+            ),
+            if (_busy)
+              const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+            else
+              switch (psr.status) {
                 PartsSourcingStatus.pending => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.check, color: Colors.green),
-                        onPressed: () => _respond(true),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red),
-                        onPressed: () => _respond(false),
-                      ),
-                    ],
-                  ),
-                PartsSourcingStatus.approved =>
-                  TextButton(onPressed: _buyNow, child: const Text('Buy now')),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check, color: Colors.green),
+                      onPressed: () => _respond(true),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: () => _respond(false),
+                    ),
+                  ],
+                ),
+                PartsSourcingStatus.approved => TextButton(onPressed: _buyNow, child: const Text('Buy now')),
                 _ => const SizedBox.shrink(),
               },
+          ],
+        ),
       ),
     );
   }

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/autoserve_api.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../features/notifications/screens/notifications_screen.dart';
 import '../../../shared/models/admin_analytics_dto.dart';
+import '../../../shared/widgets/stat_tile.dart';
 import '../widgets/staleness_banner.dart';
 
 final _analyticsProvider = FutureProvider.autoDispose<AdminAnalyticsDto>((ref) {
@@ -80,19 +82,22 @@ class _OversightScreenState extends ConsumerState<OversightScreen> {
                       padding: const EdgeInsets.all(16),
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
+                        color: Theme.of(context).extension<AppSemanticColors>()!.stopBg,
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.warning_amber, color: Theme.of(context).colorScheme.onErrorContainer),
+                          Icon(
+                            Icons.warning_amber,
+                            color: Theme.of(context).extension<AppSemanticColors>()!.stop,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               'Abnormal condition flagged: '
                               '${a.failedNotificationsRecent} failed notification(s), '
                               '${a.failedPaymentsRecent} failed payment(s) in the last 24h.',
-                              style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                              style: TextStyle(color: Theme.of(context).extension<AppSemanticColors>()!.stop),
                             ),
                           ),
                         ],
@@ -106,17 +111,18 @@ class _OversightScreenState extends ConsumerState<OversightScreen> {
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.6,
                     children: [
-                      _StatTile(label: 'Open disputes', value: '${a.openDisputes}'),
-                      _StatTile(label: 'Active providers', value: '${a.activeProviders}'),
-                      _StatTile(
+                      StatTile(label: 'Open disputes', value: '${a.openDisputes}'),
+                      StatTile(label: 'Active providers', value: '${a.activeProviders}'),
+                      StatTile(
                         label: 'Active jobs',
-                        value: '${a.serviceRequestsByStatus.entries.where((e) => e.key != 'COMPLETED' && e.key != 'CANCELLED').fold<int>(0, (sum, e) => sum + e.value)}',
+                        value:
+                            '${a.serviceRequestsByStatus.entries.where((e) => e.key != 'COMPLETED' && e.key != 'CANCELLED').fold<int>(0, (sum, e) => sum + e.value)}',
                       ),
-                      _StatTile(
+                      StatTile(
                         label: 'Recent orders',
                         value: '${a.ordersByStatus.values.fold<int>(0, (sum, v) => sum + v)}',
                       ),
-                      _StatTile(label: 'Revenue', value: a.revenue),
+                      StatTile(label: 'Revenue', value: a.revenue, highlight: true),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -138,29 +144,6 @@ class _OversightScreenState extends ConsumerState<OversightScreen> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(value, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
-          ],
-        ),
-      ),
     );
   }
 }

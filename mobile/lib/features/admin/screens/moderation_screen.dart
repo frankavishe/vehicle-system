@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/admin_user_summary_dto.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
 import '../widgets/confirm_action_dialog.dart';
 
 /// spec.md FR-005 — locate a user/provider account by name or email and
@@ -58,20 +62,14 @@ class _ModerationScreenState extends ConsumerState<ModerationScreen> {
           child: Row(
             children: [
               Expanded(
-                child: TextField(
+                child: AppTextField(
+                  label: 'Search by name or email',
                   controller: _controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Search by name or email',
-                    border: OutlineInputBorder(),
-                  ),
                   onSubmitted: _search,
                 ),
               ),
               const SizedBox(width: 8),
-              FilledButton(
-                onPressed: _searching ? null : () => _search(_controller.text),
-                child: const Text('Search'),
-              ),
+              AppButton(label: 'Search', onPressed: _searching ? null : () => _search(_controller.text)),
             ],
           ),
         ),
@@ -105,9 +103,9 @@ class _ModerationScreenState extends ConsumerState<ModerationScreen> {
                       return ListTile(
                         title: Text(u.fullName),
                         subtitle: Text('${u.email} · ${u.role}'),
-                        trailing: Chip(
-                          label: Text(u.isActive ? 'Active' : 'Suspended'),
-                          backgroundColor: (u.isActive ? Colors.green : Colors.red).withValues(alpha: 0.15),
+                        trailing: AppBadge(
+                          label: u.isActive ? 'Active' : 'Suspended',
+                          tone: u.isActive ? AppTone.go : AppTone.stop,
                         ),
                         onTap: () => context.push('/admin/moderation/accounts/${u.id}'),
                       );
@@ -206,38 +204,42 @@ class _AccountDetailScreenState extends ConsumerState<AccountDetailScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _account == null
-              ? const Center(child: Text('Account not found.'))
-              : ListView(
-                  padding: const EdgeInsets.all(16),
+          ? const Center(child: Text('Account not found.'))
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text(_account!.fullName, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(_account!.email),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
                   children: [
-                    Text(_account!.fullName, style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 4),
-                    Text(_account!.email),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        Chip(label: Text(_account!.role)),
-                        Chip(label: Text(_account!.isActive ? 'Active' : 'Suspended')),
-                        Chip(label: Text(_account!.isVerified ? 'Verified' : 'Unverified')),
-                      ],
+                    AppBadge(label: _account!.role, tone: AppTone.neutral),
+                    AppBadge(
+                      label: _account!.isActive ? 'Active' : 'Suspended',
+                      tone: _account!.isActive ? AppTone.go : AppTone.stop,
                     ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                    ],
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _busy ? null : _toggleStatus,
-                      style: _account!.isActive
-                          ? FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error)
-                          : null,
-                      child: _busy
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(_account!.isActive ? 'Suspend' : 'Reinstate'),
+                    AppBadge(
+                      label: _account!.isVerified ? 'Verified' : 'Unverified',
+                      tone: _account!.isVerified ? AppTone.go : AppTone.neutral,
                     ),
                   ],
                 ),
+                if (_error != null) ...[
+                  const SizedBox(height: 16),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ],
+                const SizedBox(height: 24),
+                AppButton(
+                  label: _account!.isActive ? 'Suspend' : 'Reinstate',
+                  variant: _account!.isActive ? AppButtonVariant.danger : AppButtonVariant.primary,
+                  onPressed: _busy ? null : _toggleStatus,
+                  loading: _busy,
+                  expand: true,
+                ),
+              ],
+            ),
     );
   }
 }

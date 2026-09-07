@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_state.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -70,17 +72,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: 8),
                     const Text('Sign in to continue'),
                     const SizedBox(height: 32),
-                    TextFormField(
+                    AppTextField(
+                      label: 'Email',
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email'),
                       validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
+                      label: 'Password',
                       controller: _password,
                       obscureText: true,
-                      decoration: const InputDecoration(labelText: 'Password'),
                       validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                     if (_error != null) ...[
@@ -88,12 +90,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                     ],
                     const SizedBox(height: 24),
-                    FilledButton(
+                    AppButton(
+                      label: 'Log in',
                       onPressed: _loading ? null : _submit,
-                      child: _loading
-                          ? const SizedBox(
-                              height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Log in'),
+                      loading: _loading,
+                      expand: true,
                     ),
                     const SizedBox(height: 12),
                     TextButton(

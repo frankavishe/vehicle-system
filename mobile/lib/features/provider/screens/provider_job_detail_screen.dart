@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/service_request.dart';
 import '../../../shared/models/spare_part_summary.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
 import 'job_list_screen.dart';
 
 final _jobDetailProvider = FutureProvider.autoDispose.family<ServiceRequestDto, String>((ref, id) {
@@ -22,9 +24,9 @@ const _providerTargets = [ServiceStatus.enRoute, ServiceStatus.inProgress, Servi
 /// _isTrackable; the provider side also drives publishing its own
 /// location once here.
 bool _isTrackable(ServiceStatus status) => switch (status) {
-      ServiceStatus.accepted || ServiceStatus.enRoute || ServiceStatus.inProgress => true,
-      _ => false,
-    };
+  ServiceStatus.accepted || ServiceStatus.enRoute || ServiceStatus.inProgress => true,
+  _ => false,
+};
 
 class ProviderJobDetailScreen extends ConsumerWidget {
   const ProviderJobDetailScreen({super.key, required this.requestId, required this.role});
@@ -114,10 +116,7 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const Spacer(),
-            Chip(
-              label: Text(sr.status.name),
-              backgroundColor: statusColor(serviceStatusWireValue(sr.status)).withValues(alpha: 0.15),
-            ),
+            AppBadge.status(serviceStatusWireValue(sr.status)),
           ],
         ),
         const SizedBox(height: 16),
@@ -136,7 +135,9 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
         if (sr.dropoffLocation != null) ...[
           const SizedBox(height: 16),
           Text('Drop-off', style: Theme.of(context).textTheme.labelLarge),
-          Text('${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}'),
+          Text(
+            '${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}',
+          ),
         ],
         if (_error != null) ...[
           const SizedBox(height: 16),
@@ -144,17 +145,13 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
         ],
         const SizedBox(height: 24),
         if (sr.status == ServiceStatus.pending)
-          FilledButton(
-            onPressed: _busy ? null : _accept,
-            child: _busy
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Accept job'),
-          ),
+          AppButton(label: 'Accept job', onPressed: _busy ? null : _accept, loading: _busy, expand: true),
         if (_isTrackable(sr.status)) ...[
-          FilledButton.icon(
+          AppButton(
+            label: 'Open live tracking',
+            icon: Icons.map,
             onPressed: () => context.push('/${widget.role.toLowerCase()}/tracking/${sr.id}'),
-            icon: const Icon(Icons.map),
-            label: const Text('Open live tracking'),
+            expand: true,
           ),
           const SizedBox(height: 8),
         ],
@@ -163,9 +160,10 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
           children: [
             for (final target in _providerTargets)
               if (reachable.contains(target))
-                FilledButton.tonal(
+                AppButton(
+                  label: _actionLabel(target),
+                  variant: AppButtonVariant.secondary,
                   onPressed: _busy ? null : () => _advance(target),
-                  child: Text(_actionLabel(target)),
                 ),
           ],
         ),
@@ -180,11 +178,11 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
   }
 
   String _actionLabel(ServiceStatus status) => switch (status) {
-        ServiceStatus.enRoute => 'Mark en route',
-        ServiceStatus.inProgress => 'Start job',
-        ServiceStatus.completed => 'Mark completed',
-        _ => status.name,
-      };
+    ServiceStatus.enRoute => 'Mark en route',
+    ServiceStatus.inProgress => 'Start job',
+    ServiceStatus.completed => 'Mark completed',
+    _ => status.name,
+  };
 }
 
 /// Mechanic-only — "screen" per PLAN §7 is realized here as a section on
@@ -215,9 +213,9 @@ class _PartsSourcingSectionState extends ConsumerState<_PartsSourcingSection> {
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const LinearProgressIndicator();
             final parts = snapshot.data!;
-            return DropdownButtonFormField<SparePartSummary>(
-              initialValue: _selected,
-              decoration: const InputDecoration(labelText: 'Spare part'),
+            return AppDropdownField<SparePartSummary>(
+              label: 'Spare part',
+              value: _selected,
               items: [
                 for (final part in parts)
                   DropdownMenuItem(value: part, child: Text('${part.title} (${part.sku})')),
@@ -238,11 +236,11 @@ class _PartsSourcingSectionState extends ConsumerState<_PartsSourcingSection> {
             IconButton(icon: const Icon(Icons.add), onPressed: () => setState(() => _quantity++)),
           ],
         ),
-        FilledButton(
+        AppButton(
+          label: 'Send request to customer',
           onPressed: _selected == null || _submitting ? null : _submit,
-          child: _submitting
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Send request to customer'),
+          loading: _submitting,
+          expand: true,
         ),
       ],
     );
@@ -251,7 +249,9 @@ class _PartsSourcingSectionState extends ConsumerState<_PartsSourcingSection> {
   Future<void> _submit() async {
     setState(() => _submitting = true);
     try {
-      await ref.read(autoserveApiProvider).createPartsRequest(
+      await ref
+          .read(autoserveApiProvider)
+          .createPartsRequest(
             serviceRequestId: widget.serviceRequestId,
             sparePartId: _selected!.id,
             quantity: _quantity,
@@ -261,9 +261,9 @@ class _PartsSourcingSectionState extends ConsumerState<_PartsSourcingSection> {
         _selected = null;
         _quantity = 1;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sent — waiting for the customer to approve.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Sent — waiting for the customer to approve.')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

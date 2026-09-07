@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/service_request.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_card.dart';
 
 final availabilityProvider = StateProvider<bool>((ref) => false);
 
-final jobListProvider =
-    FutureProvider.autoDispose.family<List<ServiceRequestDto>, String>((ref, role) {
+final jobListProvider = FutureProvider.autoDispose.family<List<ServiceRequestDto>, String>((ref, role) {
   // GET /service-requests with no status filter returns pending
   // same-type jobs + this provider's own accepted+ jobs (server-side
   // scoping, apps/dispatch/views.py's ServiceRequestListCreateView.get).
@@ -33,14 +33,21 @@ class JobListScreen extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () async => ref.invalidate(jobListProvider(role)),
       child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          SwitchListTile(
-            title: const Text('Available for new jobs'),
-            subtitle: Text(available ? 'Nearby customers can dispatch to you' : 'You will not receive job alerts'),
-            value: available,
-            onChanged: (v) => _toggleAvailability(ref, v),
+          AppCard(
+            padding: AppCardPadding.sm,
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Available for new jobs'),
+              subtitle: Text(
+                available ? 'Nearby customers can dispatch to you' : 'You will not receive job alerts',
+              ),
+              value: available,
+              onChanged: (v) => _toggleAvailability(ref, v),
+            ),
           ),
-          const Divider(height: 1),
+          const SizedBox(height: 16),
           jobs.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(32),
@@ -65,18 +72,33 @@ class JobListScreen extends ConsumerWidget {
               return Column(
                 children: [
                   for (final job in items)
-                    ListTile(
-                      leading: const Icon(Icons.build_circle_outlined),
-                      title: Text(job.problemDescription ?? 'No description'),
-                      subtitle: Text(
-                        '${job.pickupLocation.lat.toStringAsFixed(4)}, ${job.pickupLocation.lng.toStringAsFixed(4)}',
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: AppCard(
+                        padding: AppCardPadding.sm,
+                        onTap: () => context.go('/${role.toLowerCase()}/jobs/${job.id}'),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.build_circle_outlined),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(job.problemDescription ?? 'No description'),
+                                  Text(
+                                    '${job.pickupLocation.lat.toStringAsFixed(4)}, ${job.pickupLocation.lng.toStringAsFixed(4)}',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            AppBadge.status(serviceStatusWireValue(job.status)),
+                          ],
+                        ),
                       ),
-                      trailing: Chip(
-                        label: Text(job.status.name),
-                        backgroundColor:
-                            statusColor(serviceStatusWireValue(job.status)).withValues(alpha: 0.15),
-                      ),
-                      onTap: () => context.go('/${role.toLowerCase()}/jobs/${job.id}'),
                     ),
                 ],
               );

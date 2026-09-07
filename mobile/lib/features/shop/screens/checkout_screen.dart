@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/api/autoserve_api.dart';
 import '../../../shared/models/order_dto.dart';
+import '../../../shared/widgets/app_button.dart';
+import '../../../shared/widgets/app_text_field.dart';
 import '../cart_controller.dart';
 import 'my_orders_screen.dart';
 
@@ -76,13 +78,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
     } on DioException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            'Order placed, but payment could not start '
-            '(${extractApiErrorMessage(e, fallback: 'unknown error')}). '
-            'Retry payment from the order.',
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Order placed, but payment could not start '
+              '(${extractApiErrorMessage(e, fallback: 'unknown error')}). '
+              'Retry payment from the order.',
+            ),
           ),
-        ));
+        );
       }
     }
     if (mounted) context.go('/customer/orders');
@@ -95,14 +99,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          TextField(
-            controller: _address,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Delivery address',
-              border: OutlineInputBorder(),
-            ),
-          ),
+          AppTextField(label: 'Delivery address', controller: _address, maxLines: 2),
           const SizedBox(height: 20),
           Text('Payment method', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
@@ -123,11 +120,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 24),
-          FilledButton(
+          AppButton(
+            label: 'Place order & pay',
             onPressed: _submitting ? null : _placeOrder,
-            child: _submitting
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Place order & pay'),
+            loading: _submitting,
+            expand: true,
           ),
         ],
       ),

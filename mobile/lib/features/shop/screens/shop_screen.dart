@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api/autoserve_api.dart';
 import '../../../shared/models/spare_part_summary.dart';
+import '../../../shared/widgets/app_card.dart';
+import '../../../shared/widgets/fitment_tag.dart';
 import '../cart_controller.dart';
 
 /// Server-side filters GET /parts actually supports (apps/catalog/filters.py
@@ -25,14 +27,13 @@ class ShopFilters {
     Object? category = _unset,
     Object? year = _unset,
     String? query,
-  }) =>
-      ShopFilters(
-        make: make == _unset ? this.make : make as String?,
-        model: model == _unset ? this.model : model as String?,
-        category: category == _unset ? this.category : category as String?,
-        year: year == _unset ? this.year : year as int?,
-        query: query ?? this.query,
-      );
+  }) => ShopFilters(
+    make: make == _unset ? this.make : make as String?,
+    model: model == _unset ? this.model : model as String?,
+    category: category == _unset ? this.category : category as String?,
+    year: year == _unset ? this.year : year as int?,
+    query: query ?? this.query,
+  );
 
   static const _unset = Object();
 }
@@ -41,16 +42,12 @@ final shopFiltersProvider = StateProvider.autoDispose<ShopFilters>((ref) => cons
 
 final _sparePartsProvider = FutureProvider.autoDispose<List<SparePartSummary>>((ref) {
   final f = ref.watch(shopFiltersProvider);
-  return ref.watch(autoserveApiProvider).browseSpareParts(
-        make: f.make,
-        model: f.model,
-        category: f.category,
-        year: f.year,
-      );
+  return ref
+      .watch(autoserveApiProvider)
+      .browseSpareParts(make: f.make, model: f.model, category: f.category, year: f.year);
 });
 
-final _partsFacetsProvider =
-    FutureProvider.autoDispose<({List<String> makes, List<String> models})>((ref) {
+final _partsFacetsProvider = FutureProvider.autoDispose<({List<String> makes, List<String> models})>((ref) {
   return ref.watch(autoserveApiProvider).getPartsFacets();
 });
 
@@ -70,11 +67,9 @@ class ShopScreen extends ConsumerWidget {
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.search),
               hintText: 'Search parts by name or SKU',
-              border: OutlineInputBorder(),
               isDense: true,
             ),
-            onChanged: (v) =>
-                ref.read(shopFiltersProvider.notifier).state = filters.copyWith(query: v),
+            onChanged: (v) => ref.read(shopFiltersProvider.notifier).state = filters.copyWith(query: v),
           ),
         ),
         const SizedBox(height: 8),
@@ -96,10 +91,11 @@ class ShopScreen extends ConsumerWidget {
                 final visible = query.isEmpty
                     ? items
                     : items
-                        .where((p) =>
-                            p.title.toLowerCase().contains(query) ||
-                            p.sku.toLowerCase().contains(query))
-                        .toList();
+                          .where(
+                            (p) =>
+                                p.title.toLowerCase().contains(query) || p.sku.toLowerCase().contains(query),
+                          )
+                          .toList();
                 if (visible.isEmpty) {
                   return ListView(
                     children: const [
@@ -155,8 +151,9 @@ class _FacetFilterBar extends ConsumerWidget {
                   child: ChoiceChip(
                     label: Text(make),
                     selected: filters.make == make,
-                    onSelected: (selected) => ref.read(shopFiltersProvider.notifier).state =
-                        filters.copyWith(make: selected ? make : null),
+                    onSelected: (selected) => ref.read(shopFiltersProvider.notifier).state = filters.copyWith(
+                      make: selected ? make : null,
+                    ),
                   ),
                 ),
             ],
@@ -174,47 +171,56 @@ class _PartCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final outOfStock = part.stockQuantity <= 0;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/customer/shop/${part.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Center(
-                  child: Icon(Icons.build_circle_outlined,
-                      size: 48, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
-                ),
+    return AppCard(
+      padding: AppCardPadding.sm,
+      onTap: () => context.push('/customer/shop/${part.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Center(
+              child: Icon(
+                Icons.build_circle_outlined,
+                size: 48,
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
               ),
-              Text(part.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall),
-              Text(part.sku, style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('TZS ${part.price}', style: Theme.of(context).textTheme.labelLarge),
-                  IconButton(
-                    icon: const Icon(Icons.add_shopping_cart),
-                    tooltip: outOfStock ? 'Out of stock' : 'Add to cart',
-                    onPressed: outOfStock
-                        ? null
-                        : () async {
-                            await ref.read(cartControllerProvider.notifier).add(sparePartId: part.id);
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${part.title} added to cart')),
-                            );
-                          },
-                  ),
-                ],
+            ),
+          ),
+          Text(
+            part.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          FitmentTag(
+            sku: part.sku,
+            make: part.compatibleMake,
+            model: part.compatibleModel,
+            yearStart: part.yearStart,
+            yearEnd: part.yearEnd,
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('TZS ${part.price}', style: Theme.of(context).textTheme.labelLarge),
+              IconButton(
+                icon: const Icon(Icons.add_shopping_cart),
+                tooltip: outOfStock ? 'Out of stock' : 'Add to cart',
+                onPressed: outOfStock
+                    ? null
+                    : () async {
+                        await ref.read(cartControllerProvider.notifier).add(sparePartId: part.id);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text('${part.title} added to cart')));
+                      },
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

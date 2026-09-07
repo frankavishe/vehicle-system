@@ -12,10 +12,12 @@ import '../../../core/api/api_config.dart';
 import '../../../core/api/autoserve_api.dart';
 import '../../../core/auth/auth_state.dart';
 import '../../../core/auth/secure_token_store.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/models/service_request.dart';
+import '../../../shared/widgets/app_badge.dart';
+import '../../../shared/widgets/app_button.dart';
 
-final _trackingDetailProvider =
-    FutureProvider.autoDispose.family<ServiceRequestDto, String>((ref, id) {
+final _trackingDetailProvider = FutureProvider.autoDispose.family<ServiceRequestDto, String>((ref, id) {
   return ref.watch(autoserveApiProvider).getServiceRequest(id);
 });
 
@@ -94,21 +96,21 @@ class _TrackingBodyState extends ConsumerState<_TrackingBody> {
     if (token == null || _disposed) return;
 
     setState(() => _connection = _ConnectionState.connecting);
-    final uri = Uri.parse(
-      '${ApiConfig.wsBaseUrl}/ws/api/v1/tracking/${widget.sr.id}/?token=$token',
-    );
+    final uri = Uri.parse('${ApiConfig.wsBaseUrl}/ws/api/v1/tracking/${widget.sr.id}/?token=$token');
     final channel = WebSocketChannel.connect(uri);
     _channel = channel;
 
     unawaited(
-      channel.ready.then((_) {
-        if (!_disposed) {
-          _reconnectAttempts = 0;
-          setState(() => _connection = _ConnectionState.open);
-        }
-      }).catchError((_) {
-        // Surfaced via the stream's onError below instead.
-      }),
+      channel.ready
+          .then((_) {
+            if (!_disposed) {
+              _reconnectAttempts = 0;
+              setState(() => _connection = _ConnectionState.open);
+            }
+          })
+          .catchError((_) {
+            // Surfaced via the stream's onError below instead.
+          }),
     );
 
     _sub = channel.stream.listen(
@@ -186,8 +188,9 @@ class _TrackingBodyState extends ConsumerState<_TrackingBody> {
   Widget build(BuildContext context) {
     final sr = widget.sr;
     final pickup = ll.LatLng(sr.pickupLocation.lat, sr.pickupLocation.lng);
-    final dropoff =
-        sr.dropoffLocation != null ? ll.LatLng(sr.dropoffLocation!.lat, sr.dropoffLocation!.lng) : null;
+    final dropoff = sr.dropoffLocation != null
+        ? ll.LatLng(sr.dropoffLocation!.lat, sr.dropoffLocation!.lng)
+        : null;
     final center = _live ?? pickup;
 
     return Column(
@@ -199,9 +202,10 @@ class _TrackingBodyState extends ConsumerState<_TrackingBody> {
               _ConnectionBadge(state: _connection),
               const Spacer(),
               if (_isProvider)
-                FilledButton.tonal(
+                AppButton(
+                  label: _sharing ? 'Stop sharing location' : 'Share my location',
+                  variant: AppButtonVariant.secondary,
                   onPressed: _toggleSharing,
-                  child: Text(_sharing ? 'Stop sharing location' : 'Share my location'),
                 ),
             ],
           ),
@@ -222,11 +226,26 @@ class _TrackingBodyState extends ConsumerState<_TrackingBody> {
               ),
               MarkerLayer(
                 markers: [
-                  Marker(point: pickup, width: 18, height: 18, child: _dot(Colors.blue)),
+                  Marker(
+                    point: pickup,
+                    width: 18,
+                    height: 18,
+                    child: _dot(Theme.of(context).colorScheme.secondary),
+                  ),
                   if (dropoff != null)
-                    Marker(point: dropoff, width: 18, height: 18, child: _dot(Colors.green)),
+                    Marker(
+                      point: dropoff,
+                      width: 18,
+                      height: 18,
+                      child: _dot(Theme.of(context).extension<AppSemanticColors>()!.go),
+                    ),
                   if (_live != null)
-                    Marker(point: _live!, width: 18, height: 18, child: _dot(Colors.orange)),
+                    Marker(
+                      point: _live!,
+                      width: 18,
+                      height: 18,
+                      child: _dot(Theme.of(context).colorScheme.primary),
+                    ),
                 ],
               ),
             ],
@@ -237,12 +256,12 @@ class _TrackingBodyState extends ConsumerState<_TrackingBody> {
   }
 
   Widget _dot(Color color) => Container(
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
-        ),
-      );
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 2),
+    ),
+  );
 }
 
 class _ConnectionBadge extends StatelessWidget {
@@ -251,11 +270,11 @@ class _ConnectionBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = switch (state) {
-      _ConnectionState.open => ('Live', Colors.green),
-      _ConnectionState.connecting => ('Connecting…', Colors.blue),
-      _ConnectionState.closed => ('Disconnected', Colors.red),
+    final (label, tone) = switch (state) {
+      _ConnectionState.open => ('Live', AppTone.go),
+      _ConnectionState.connecting => ('Connecting…', AppTone.signal),
+      _ConnectionState.closed => ('Disconnected', AppTone.stop),
     };
-    return Chip(label: Text(label), backgroundColor: color.withValues(alpha: 0.15));
+    return AppBadge(label: label, tone: tone);
   }
 }
