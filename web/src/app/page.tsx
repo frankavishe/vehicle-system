@@ -43,10 +43,10 @@ export default async function HomePage({
       <Notice code={notice} />
       <section className="grid gap-8 py-4 sm:grid-cols-[1.1fr_0.9fr] sm:items-center">
         <div className="flex flex-col gap-5">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-hazard">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
             {parts.count > 0 ? `${parts.count} parts in stock` : "Tanzania spare parts counter"}
           </span>
-          <h1 className="font-display text-5xl font-extrabold uppercase leading-[0.95] tracking-tight text-asphalt sm:text-6xl">
+          <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-asphalt sm:text-6xl">
             The right part,
             <br />
             fitted right.
@@ -63,9 +63,7 @@ export default async function HomePage({
       {parts.results.length > 0 && (
         <section className="flex flex-col gap-5">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-2xl font-bold uppercase tracking-tight text-asphalt">
-              Recently listed
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-asphalt">Recently listed</h2>
             <Link href="/catalog" className="text-sm font-semibold text-signal hover:text-signal-dark">
               Browse full catalog →
             </Link>

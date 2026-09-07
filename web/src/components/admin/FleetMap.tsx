@@ -46,7 +46,7 @@ export function FleetMap({ initialProviders }: { initialProviders: ProviderMapEn
   const center = withPosition[0] ? ([withPosition[0].lat, withPosition[0].lng] as [number, number]) : DEFAULT_CENTER;
 
   return (
-    <div className="h-[32rem] w-full overflow-hidden border border-line">
+    <div className="h-[32rem] w-full overflow-hidden rounded-2xl border border-line shadow-sm">
       <MapContainer center={center} zoom={12} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

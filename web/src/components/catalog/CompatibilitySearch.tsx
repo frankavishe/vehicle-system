@@ -45,7 +45,7 @@ export function CompatibilitySearch({ initialFacets }: { initialFacets: Facets }
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid grid-cols-1 gap-3 border border-line bg-surface-raised p-4 sm:grid-cols-[1fr_1fr_120px_auto] sm:p-5"
+      className="grid grid-cols-1 gap-3 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:grid-cols-[1fr_1fr_120px_auto] sm:p-5"
     >
       <Select value={make} onChange={(e) => handleMakeChange(e.target.value)} aria-label="Make">
         <option value="">Any make</option>

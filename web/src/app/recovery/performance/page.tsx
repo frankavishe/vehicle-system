@@ -9,7 +9,7 @@ export default async function RecoveryPerformancePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Performance</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Performance</h1>
       <PerformanceSummary initialPerformance={performance} />
     </div>
   );

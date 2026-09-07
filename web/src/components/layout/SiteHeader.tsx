@@ -1,11 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useCartCount } from "@/lib/cart/CartCountProvider";
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <Link
+      href={href}
+      className={
+        active
+          ? "rounded-full bg-primary-soft px-3 py-1.5 font-medium text-primary"
+          : "px-3 py-1.5 text-steel hover:text-asphalt"
+      }
+    >
+      {children}
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const { user, setUser } = useAuth();
@@ -23,78 +40,70 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-10 bg-surface">
+    <header className="sticky top-0 z-10 border-b border-line bg-surface-raised shadow-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-4 py-4 sm:px-6">
-        <Link href="/" className="font-display text-2xl font-bold tracking-tight text-asphalt">
-          AUTO<span className="text-hazard">SERVE</span>
+        <Link href="/" className="font-display text-2xl font-bold text-asphalt">
+          AUTO<span className="text-primary">SERVE</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-steel sm:flex">
-          <Link href="/catalog" className="hover:text-asphalt">
-            Catalog
-          </Link>
+        <nav className="hidden items-center gap-1 text-sm font-medium sm:flex">
+          <NavLink href="/catalog">Catalog</NavLink>
           {user?.role === "CUSTOMER" && (
             <>
-              <Link href="/orders" className="hover:text-asphalt">
-                My orders
-              </Link>
-              <Link href="/requests" className="hover:text-asphalt">
-                Request mechanic/tow
-              </Link>
+              <NavLink href="/orders">My orders</NavLink>
+              <NavLink href="/requests">Request mechanic/tow</NavLink>
             </>
           )}
           {user?.role === "ADMIN" && (
             <>
-              <Link href="/admin/vendors" className="hover:text-asphalt">
-                Vendors
-              </Link>
-              <Link href="/admin/inventory" className="hover:text-asphalt">
-                Inventory
-              </Link>
+              <NavLink href="/admin/vendors">Vendors</NavLink>
+              <NavLink href="/admin/inventory">Inventory</NavLink>
             </>
           )}
-          {user?.role === "MECHANIC" && (
-            <Link href="/mechanic" className="hover:text-asphalt">
-              Mechanic Portal
-            </Link>
-          )}
-          {user?.role === "RECOVERY" && (
-            <Link href="/recovery" className="hover:text-asphalt">
-              Recovery Portal
-            </Link>
-          )}
+          {user?.role === "MECHANIC" && <NavLink href="/mechanic">Mechanic Portal</NavLink>}
+          {user?.role === "RECOVERY" && <NavLink href="/recovery">Recovery Portal</NavLink>}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {user?.role === "CUSTOMER" && (
             <Link
               href="/cart"
-              className="border border-line bg-surface-raised px-3 py-1.5 text-sm font-semibold text-asphalt hover:border-asphalt"
+              className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-asphalt hover:border-primary"
             >
               Cart{count > 0 ? ` (${count})` : ""}
             </Link>
           )}
           {user ? (
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="text-sm font-semibold text-steel hover:text-asphalt disabled:opacity-50"
-            >
-              {loggingOut ? "Signing out…" : `Sign out (${user.full_name.split(" ")[0]})`}
-            </button>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2 rounded-full bg-primary-soft py-1 pl-1 pr-3 text-sm font-medium text-primary">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
+                  {user.full_name.charAt(0).toUpperCase()}
+                </span>
+                {user.full_name.split(" ")[0]}
+              </span>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="text-sm font-medium text-steel hover:text-asphalt disabled:opacity-50"
+              >
+                {loggingOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
           ) : (
-            <div className="flex items-center gap-3 text-sm font-semibold">
+            <div className="flex items-center gap-3 text-sm font-medium">
               <Link href="/login" className="text-steel hover:text-asphalt">
                 Log in
               </Link>
-              <Link href="/register" className="bg-hazard px-3 py-1.5 text-white hover:bg-hazard-dark">
+              <Link
+                href="/register"
+                className="rounded-full bg-primary px-4 py-1.5 text-white shadow-sm hover:bg-primary-dark"
+              >
                 Sign up
               </Link>
             </div>
           )}
         </div>
       </div>
-      <div className="hazard-stripe" />
     </header>
   );
 }

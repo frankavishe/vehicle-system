@@ -42,7 +42,10 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
+    <form
+      onSubmit={handleSubmit}
+      className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-line bg-surface-raised p-6 shadow-sm"
+    >
       <Field label="Email" htmlFor="email">
         <Input
           id="email"

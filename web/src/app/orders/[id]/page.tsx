@@ -37,47 +37,43 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">
-            Order #{order.id.slice(0, 8)}
-          </h1>
+          <h1 className="font-display text-3xl font-bold text-asphalt">Order #{order.id.slice(0, 8)}</h1>
           <span className="text-sm text-steel-soft">Placed {formatDate(order.created_at)}</span>
         </div>
         <OrderStatusBadge status={order.status} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_280px]">
-        <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+        <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
           {order.items.map((item) => (
             <div key={item.id} className="flex items-center justify-between p-4">
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-semibold text-asphalt">{item.spare_part.title}</span>
-                <span className="font-mono text-xs text-steel-soft">
+                <span className="text-xs text-steel-soft">
                   {formatTZS(item.unit_price)} × {item.quantity}
                 </span>
               </div>
-              <span className="font-mono text-sm text-asphalt">
-                {formatTZS(Number(item.unit_price) * item.quantity)}
-              </span>
+              <span className="text-sm text-asphalt">{formatTZS(Number(item.unit_price) * item.quantity)}</span>
             </div>
           ))}
           <div className="flex items-center justify-between p-4">
-            <span className="text-sm font-semibold uppercase tracking-wide text-steel">Total</span>
-            <span className="font-mono text-lg font-semibold text-asphalt">{formatTZS(order.total_amount)}</span>
+            <span className="text-sm font-semibold text-steel">Total</span>
+            <span className="text-lg font-semibold text-asphalt">{formatTZS(order.total_amount)}</span>
           </div>
         </div>
 
         <aside className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2 border border-line bg-surface-raised p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-steel">Delivery address</h2>
+          <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
+            <h2 className="text-sm font-medium text-steel">Delivery address</h2>
             <p className="text-sm text-steel">{order.delivery_address}</p>
           </div>
 
           {shipment && (
-            <div className="flex flex-col gap-2 border border-line bg-surface-raised p-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-steel">Shipment</h2>
+            <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
+              <h2 className="text-sm font-medium text-steel">Shipment</h2>
               {shipment.courier_name && <p className="text-sm text-steel">Courier: {shipment.courier_name}</p>}
               {shipment.tracking_ref && (
-                <p className="font-mono text-xs text-steel-soft">Tracking ref {shipment.tracking_ref}</p>
+                <p className="text-xs text-steel-soft">Tracking ref {shipment.tracking_ref}</p>
               )}
               {shipment.dispatched_at && (
                 <p className="text-xs text-steel-soft">Dispatched {formatDate(shipment.dispatched_at)}</p>

@@ -18,7 +18,7 @@ export function DocumentUploadList({ initialDocuments }: { initialDocuments: Pro
     <div className="flex flex-col gap-6">
       <UploadForm onUploaded={(doc) => setDocuments([doc, ...documents])} />
 
-      <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+      <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
         {documents.length === 0 && (
           <p className="p-4 text-sm text-steel-soft">No documents uploaded yet.</p>
         )}
@@ -75,7 +75,7 @@ function UploadForm({ onUploaded }: { onUploaded: (doc: ProviderDocument) => voi
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 border border-line bg-surface-raised p-4 sm:flex-row sm:items-end"
+      className="flex flex-col gap-3 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:flex-row sm:items-end"
     >
       <Field label="Document type" htmlFor="doc-type">
         <Input

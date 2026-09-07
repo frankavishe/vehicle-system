@@ -1,10 +1,15 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { DashboardTabs } from "@/components/layout/DashboardTabs";
 import { apiFetch } from "@/lib/api/server";
 import { getSession } from "@/lib/auth/session";
 import type { MeResponse } from "@/lib/types";
+
+const TABS = [
+  { href: "/recovery", label: "Dispatch" },
+  { href: "/recovery/performance", label: "Performance" },
+];
 
 export default async function RecoveryLayout({ children }: { children: ReactNode }) {
   const user = await getSession();
@@ -20,14 +25,7 @@ export default async function RecoveryLayout({ children }: { children: ReactNode
 
   return (
     <div className="flex flex-col gap-6">
-      <nav className="flex gap-6 border-b border-line pb-3 text-sm font-semibold text-steel">
-        <Link href="/recovery" className="hover:text-asphalt">
-          Dispatch
-        </Link>
-        <Link href="/recovery/performance" className="hover:text-asphalt">
-          Performance
-        </Link>
-      </nav>
+      <DashboardTabs items={TABS} />
       {children}
     </div>
   );

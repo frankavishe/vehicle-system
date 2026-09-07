@@ -7,7 +7,7 @@ import type { ProviderMapEntry } from "@/lib/types";
 const FleetMap = dynamic(() => import("./FleetMap").then((m) => m.FleetMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[32rem] w-full items-center justify-center border border-line bg-surface-raised text-sm text-steel-soft">
+    <div className="flex h-[32rem] w-full items-center justify-center rounded-2xl border border-line bg-surface-raised text-sm text-steel-soft shadow-sm">
       Loading map…
     </div>
   ),

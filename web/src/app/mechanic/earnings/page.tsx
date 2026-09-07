@@ -7,7 +7,7 @@ export default async function MechanicEarningsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Earnings</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Earnings</h1>
       <EarningsSummary initialPayouts={page.results} />
     </div>
   );

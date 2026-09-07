@@ -21,7 +21,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="grid grid-cols-1 gap-10 sm:grid-cols-2">
-      <div className="flex aspect-square items-center justify-center overflow-hidden bg-surface-raised border border-line">
+      <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface-raised shadow-sm">
         {part.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote vendor-hosted images
           <img src={part.image_url} alt={part.title} className="h-full w-full object-cover" />
@@ -34,19 +34,17 @@ export default async function PartDetailPage({ params }: { params: Promise<{ id:
 
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-steel-soft">
+          <span className="text-xs font-medium text-steel-soft">
             {part.category} · {part.vendor?.name ?? "Unlisted vendor"}
           </span>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">
-            {part.title}
-          </h1>
-          <p className="font-mono text-sm text-steel-soft">SKU {part.sku}</p>
+          <h1 className="font-display text-3xl font-bold text-asphalt">{part.title}</h1>
+          <p className="text-sm text-steel-soft">SKU {part.sku}</p>
         </div>
 
         <FitmentTag part={part} />
 
         <div className="flex items-center gap-3">
-          <span className="font-mono text-2xl font-semibold text-asphalt">{formatTZS(part.price)}</span>
+          <span className="font-display text-2xl font-semibold text-asphalt">{formatTZS(part.price)}</span>
           {part.stock_quantity === 0 ? (
             <Badge tone="stop">Out of stock</Badge>
           ) : part.stock_quantity <= 3 ? (

@@ -11,7 +11,7 @@ import type { ServiceRequest } from "@/lib/types";
 const ActiveTowMap = dynamic(() => import("./ActiveTowMap").then((m) => m.ActiveTowMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[32rem] w-full items-center justify-center border border-line bg-surface-raised text-sm text-steel-soft">
+    <div className="flex h-[32rem] w-full items-center justify-center rounded-2xl border border-line bg-surface-raised text-sm text-steel-soft shadow-sm">
       Loading map…
     </div>
   ),

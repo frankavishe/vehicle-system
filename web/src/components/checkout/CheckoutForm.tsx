@@ -52,13 +52,11 @@ export function CheckoutForm() {
       </Field>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-steel">
-          Pay with
-        </legend>
+        <legend className="mb-1 text-xs font-medium text-steel">Pay with</legend>
         {PAYMENT_METHODS.map((option) => (
           <label
             key={option.value}
-            className="flex cursor-pointer items-center gap-3 border border-line bg-surface-raised px-3 py-2.5 text-sm has-[:checked]:border-asphalt"
+            className="flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface-raised px-3 py-2.5 text-sm has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary/20"
           >
             <input
               type="radio"

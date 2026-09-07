@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import { Card } from "@/components/ui/Card";
+import { DonutChart, DEFAULT_PALETTE } from "@/components/ui/DonutChart";
 import { Field, Input } from "@/components/ui/Field";
+import { Stat } from "@/components/ui/Stat";
 import { apiFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import type { ProviderPerformance } from "@/lib/types";
@@ -65,11 +68,9 @@ export function PerformanceSummary({ initialPerformance }: { initialPerformance:
     };
   }, [period]);
 
-  const noActivity = performance.completed_count === 0 && performance.cancelled_count === 0;
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 border border-line bg-surface-raised p-4 sm:flex-row sm:items-end">
+      <Card className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <Field label="From" htmlFor="performance-period-start">
           <Input
             id="performance-period-start"
@@ -86,53 +87,57 @@ export function PerformanceSummary({ initialPerformance }: { initialPerformance:
             onChange={(e) => setPeriod((p) => ({ ...p, periodEnd: e.target.value }))}
           />
         </Field>
-      </div>
+      </Card>
 
       {error && <p className="text-sm text-stop">{error}</p>}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1 border border-line bg-surface-raised p-4">
-          <span className="text-xs font-semibold uppercase tracking-wide text-steel">Completed tows</span>
-          <span className="font-display text-3xl font-bold text-asphalt">
-            {loading ? "…" : performance.completed_count}
-          </span>
-          {!loading && performance.completed_count === 0 && performance.cancelled_count > 0 && (
+        <Stat
+          label="Completed tows"
+          value={performance.completed_count}
+          loading={loading}
+          helper={
             // "0 completed" must read as distinct from "no data" — a
             // non-zero cancelled_count alongside it makes that explicit.
-            <span className="text-xs text-steel-soft">
-              {performance.cancelled_count} cancelled in this period
-            </span>
-          )}
-        </div>
-        <div className="flex flex-col gap-1 border border-line bg-surface-raised p-4">
-          <span className="text-xs font-semibold uppercase tracking-wide text-steel">Average rating</span>
-          <span className="font-display text-3xl font-bold text-asphalt">
-            {loading ? "…" : performance.average_rating != null ? performance.average_rating.toFixed(2) : "—"}
-          </span>
-          {!loading && performance.average_rating == null && (
-            <span className="text-xs text-steel-soft">No reviews in this period</span>
-          )}
-        </div>
-        <div className="flex flex-col gap-1 border border-line bg-surface-raised p-4">
-          <span className="text-xs font-semibold uppercase tracking-wide text-steel">Avg. response time</span>
-          <span className="font-display text-3xl font-bold text-asphalt">
-            {loading
-              ? "…"
-              : performance.average_response_time_seconds != null
-                ? formatResponseTime(performance.average_response_time_seconds)
-                : "—"}
-          </span>
-          {!loading && performance.average_response_time_seconds == null && (
-            <span className="text-xs text-steel-soft">No completed tows in this period</span>
-          )}
-        </div>
+            !loading && performance.completed_count === 0 && performance.cancelled_count > 0
+              ? `${performance.cancelled_count} cancelled in this period`
+              : undefined
+          }
+        />
+        <Stat
+          label="Average rating"
+          value={performance.average_rating != null ? performance.average_rating.toFixed(2) : "—"}
+          loading={loading}
+          helper={!loading && performance.average_rating == null ? "No reviews in this period" : undefined}
+        />
+        <Stat
+          label="Avg. response time"
+          value={
+            performance.average_response_time_seconds != null
+              ? formatResponseTime(performance.average_response_time_seconds)
+              : "—"
+          }
+          loading={loading}
+          helper={
+            !loading && performance.average_response_time_seconds == null
+              ? "No completed tows in this period"
+              : undefined
+          }
+        />
       </div>
 
-      {!loading && noActivity && (
-        <p className="border border-line bg-surface-raised p-4 text-sm text-steel-soft">
-          No activity in this period yet.
-        </p>
-      )}
+      <Card>
+        <h2 className="mb-4 text-sm font-medium text-steel">Completed vs. cancelled</h2>
+        <DonutChart
+          data={[
+            { label: "Completed", value: performance.completed_count, color: DEFAULT_PALETTE[0] },
+            { label: "Cancelled", value: performance.cancelled_count, color: DEFAULT_PALETTE[5] },
+          ]}
+          centerValue={performance.completed_count + performance.cancelled_count}
+          centerLabel="tows"
+          emptyMessage="No activity in this period yet."
+        />
+      </Card>
     </div>
   );
 }

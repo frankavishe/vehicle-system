@@ -10,9 +10,7 @@ export default async function NewRequestPage() {
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
-      <h1 className="font-display text-4xl font-bold uppercase tracking-tight text-asphalt">
-        Request a mechanic or tow
-      </h1>
+      <h1 className="font-display text-4xl font-bold text-asphalt">Request a mechanic or tow</h1>
       <RequestServiceForm />
     </div>
   );

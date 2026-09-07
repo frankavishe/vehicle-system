@@ -1,27 +1,29 @@
 @import "tailwindcss";
 
-/* AutoServe design tokens — workshop parts-counter palette: cool concrete
-   surface, asphalt/steel text, hazard-amber for action, steel-blue for
-   links/info. See src/components/ui for the components built on these. */
+/* AutoServe design tokens — fintech-dashboard palette: warm off-white
+   surface, deep pine-green brand/CTA color, calm modern typography.
+   See src/components/ui for the components built on these. */
 :root {
-  --color-surface: #eef0ec;
+  --color-surface: #f4f3ef;
   --color-surface-raised: #ffffff;
-  --color-asphalt: #14171a;
-  --color-steel: #3b4a58;
-  --color-steel-soft: #6b7a87;
-  --color-line: #d7dad2;
+  --color-asphalt: #16181d;
+  --color-steel: #4b5563;
+  --color-steel-soft: #8a9099;
+  --color-line: #e5e3db;
 
-  --color-hazard: #e8720c;
-  --color-hazard-dark: #c25e07;
-  --color-signal: #2a6f8e;
-  --color-signal-dark: #1f5871;
-  --color-go: #3e7d3a;
-  --color-go-bg: #e6efe2;
-  --color-stop: #b23a2e;
-  --color-stop-bg: #f6e4e1;
+  --color-primary: #123524;
+  --color-primary-dark: #0b2419;
+  --color-primary-soft: #e4ece7;
 
-  --font-display: var(--font-big-shoulders);
-  --font-body: var(--font-plex-sans);
+  --color-signal: #2563eb;
+  --color-signal-dark: #1d4ed8;
+  --color-go: #1c7a4c;
+  --color-go-bg: #e1f3e9;
+  --color-stop: #d92d20;
+  --color-stop-bg: #fbe7e4;
+
+  --font-display: var(--font-jakarta);
+  --font-body: var(--font-inter);
   --font-data: var(--font-plex-mono);
 }
 
@@ -32,8 +34,9 @@
   --color-steel: var(--color-steel);
   --color-steel-soft: var(--color-steel-soft);
   --color-line: var(--color-line);
-  --color-hazard: var(--color-hazard);
-  --color-hazard-dark: var(--color-hazard-dark);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-soft: var(--color-primary-soft);
   --color-signal: var(--color-signal);
   --color-signal-dark: var(--color-signal-dark);
   --color-go: var(--color-go);
@@ -43,7 +46,6 @@
 
   --font-display: var(--font-display);
   --font-sans: var(--font-body);
-  --font-mono: var(--font-data);
 }
 
 body {
@@ -52,29 +54,22 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
 }
 
-/* Signature hazard stripe — used exactly once, under the site header, as
-   a nod to workshop hazard tape without tiling it everywhere. */
-.hazard-stripe {
-  height: 6px;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--color-hazard) 0 10px,
-    var(--color-asphalt) 10px 20px
-  );
-}
-
-/* Fitment tag — a die-cut parts-ticket look for compatibility data
-   (make/model/year/SKU). Dashed perforation edge + slight rotation on
-   hover, since this is literally the spec data, not decoration. */
+/* Fitment tag — the one place a data/spec typeface survives, for
+   compatibility data (make/model/year/SKU). Softened to the new palette;
+   keeps its dashed "parts ticket" identity deliberately. */
 .fitment-tag {
-  border: 1px dashed var(--color-steel-soft);
+  border: 1px dashed var(--color-line);
   background: var(--color-surface-raised);
+  border-radius: 0.75rem;
   font-family: var(--font-data), monospace;
-  transition: transform 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .fitment-tag:hover {
   transform: rotate(-1deg);
+  border-color: var(--color-primary);
 }
 
 :focus-visible {

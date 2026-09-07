@@ -10,8 +10,8 @@ export function FareEstimateCard({ job }: { job: ServiceRequest }) {
   const isCompleted = job.status === "COMPLETED";
 
   return (
-    <div className="flex flex-col gap-3 border border-line bg-surface-raised p-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-steel">Fare</h2>
+    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
+      <h2 className="text-sm font-medium text-steel">Fare</h2>
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-steel-soft">Estimated</span>

@@ -26,7 +26,7 @@ function markerIcon(stale: boolean) {
   return divIcon({
     className: "",
     html: `<span style="display:block;width:14px;height:14px;border-radius:9999px;background:var(${
-      stale ? "--color-steel-soft" : "--color-hazard"
+      stale ? "--color-steel-soft" : "--color-primary"
     });border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.25)"></span>`,
     iconSize: [14, 14],
     iconAnchor: [7, 7],
@@ -116,7 +116,7 @@ export function ActiveTowMap({
     : DEFAULT_CENTER;
 
   return (
-    <div className="h-[32rem] w-full overflow-hidden border border-line">
+    <div className="h-[32rem] w-full overflow-hidden rounded-2xl border border-line shadow-sm">
       <MapContainer center={center} zoom={12} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -14,7 +14,7 @@ export default async function AdminVendorsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Vendors</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Vendors</h1>
       <VendorManager initialVendors={page.results} />
     </div>
   );

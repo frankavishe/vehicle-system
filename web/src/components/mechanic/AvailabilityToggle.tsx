@@ -29,9 +29,9 @@ export function AvailabilityToggle({ initialIsAvailable }: { initialIsAvailable:
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 border border-line bg-surface-raised p-4">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
       <div className="flex flex-col gap-0.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-steel">Availability</span>
+        <span className="text-xs font-medium text-steel">Availability</span>
         <span className="text-sm text-steel">
           {isAvailable ? "You're online — new jobs can reach you." : "You're offline — no new jobs will be offered."}
         </span>

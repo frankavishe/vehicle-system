@@ -42,7 +42,7 @@ export function LocationPickerMap({
   onPick: (point: LatLng) => void;
 }) {
   return (
-    <div className="h-72 w-full overflow-hidden border border-line">
+    <div className="h-72 w-full overflow-hidden rounded-xl border border-line">
       <MapContainer center={[center.lat, center.lng]} zoom={13} className="h-full w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

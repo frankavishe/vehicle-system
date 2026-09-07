@@ -7,7 +7,7 @@ export default async function MechanicHistoryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Job history</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Job history</h1>
       <JobHistoryTable jobs={jobs} />
     </div>
   );

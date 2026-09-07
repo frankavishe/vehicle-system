@@ -7,7 +7,7 @@ export default async function AdminPayoutsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Payouts</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Payouts</h1>
       <PayoutManager initialPayouts={page.results} />
     </div>
   );

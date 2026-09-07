@@ -13,7 +13,7 @@ export function DisputeManager({ initialDisputes }: { initialDisputes: Dispute[]
   const [disputes, setDisputes] = useState(initialDisputes);
 
   return (
-    <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+    <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
       {disputes.length === 0 && <p className="p-4 text-sm text-steel-soft">No disputes on file.</p>}
       {disputes.map((dispute) => (
         <DisputeRow
@@ -56,7 +56,7 @@ function DisputeRow({
   return (
     <div className="flex items-center justify-between gap-4 p-4">
       <div className="flex flex-col gap-0.5">
-        <span className="font-mono text-xs text-steel-soft">
+        <span className="text-xs text-steel-soft">
           Service request {dispute.service_request.slice(0, 8)} · {formatDate(dispute.created_at)}
         </span>
         <span className="text-sm text-steel">{dispute.reason}</span>

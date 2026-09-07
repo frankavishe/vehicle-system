@@ -37,7 +37,7 @@ export default async function RecoveryDispatchPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Dispatch</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Dispatch</h1>
 
       <AvailabilityToggle initialIsAvailable={availability.is_available} />
 

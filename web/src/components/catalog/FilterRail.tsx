@@ -35,8 +35,8 @@ export function FilterRail({ facets }: { facets: Facets }) {
   }
 
   return (
-    <form onSubmit={apply} className="flex flex-col gap-4 border border-line bg-surface-raised p-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-steel">Filter parts</h2>
+    <form onSubmit={apply} className="flex flex-col gap-4 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
+      <h2 className="text-sm font-semibold text-steel">Filter parts</h2>
 
       <Field label="Make" htmlFor="filter-make">
         <Select id="filter-make" value={make} onChange={(e) => setMake(e.target.value)}>

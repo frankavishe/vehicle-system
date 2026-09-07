@@ -147,7 +147,7 @@ export function RequestServiceForm() {
             onPickMap={() => setPickingDropoff((v) => !v)}
           />
           {pickingDropoff && (
-            <div className="flex flex-col gap-2 border border-line bg-surface-raised p-3">
+            <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-raised p-3 shadow-sm">
               <p className="text-sm text-steel-soft">
                 Click the map to drop a pin — useful when the vehicle is broken down somewhere
                 other than where the tow should end up (e.g. a garage across town).
@@ -202,9 +202,9 @@ function LocationField({
   onPickMap?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border border-line bg-surface-raised p-3">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface-raised p-3 shadow-sm">
       <div className="flex flex-col gap-0.5">
-        <span className="text-xs font-semibold uppercase tracking-wide text-steel">{label}</span>
+        <span className="text-xs font-medium text-steel">{label}</span>
         <span className="text-sm text-steel-soft">
           {position ? `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : "Not captured yet"}
         </span>

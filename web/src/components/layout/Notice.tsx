@@ -15,7 +15,7 @@ export function Notice({ code }: { code?: string }) {
   if (!message) return null;
 
   return (
-    <p className="border border-hazard/30 bg-hazard/10 px-4 py-3 text-sm font-medium text-hazard-dark">
+    <p className="rounded-2xl border border-primary/20 bg-primary-soft px-4 py-3 text-sm font-medium text-primary-dark">
       {message}
     </p>
   );

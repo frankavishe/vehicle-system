@@ -108,8 +108,10 @@ function StatusCard({
 }) {
   const borders = { go: "border-go", stop: "border-stop", neutral: "border-line" };
   return (
-    <div className={`flex flex-col items-center gap-3 border-2 bg-surface-raised p-10 text-center ${borders[tone]}`}>
-      <h1 className="font-display text-2xl font-bold uppercase tracking-tight text-asphalt">{title}</h1>
+    <div
+      className={`flex flex-col items-center gap-3 rounded-2xl border-2 bg-surface-raised p-10 text-center shadow-sm ${borders[tone]}`}
+    >
+      <h1 className="font-display text-2xl font-bold text-asphalt">{title}</h1>
       {children}
     </div>
   );

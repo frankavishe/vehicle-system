@@ -11,7 +11,7 @@ import type { LatLng, ServiceRequestStatus } from "@/lib/types";
 const TrackingMap = dynamic(() => import("./TrackingMap").then((m) => m.TrackingMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-96 w-full items-center justify-center border border-line bg-surface-raised text-sm text-steel-soft">
+    <div className="flex h-96 w-full items-center justify-center rounded-2xl border border-line bg-surface-raised text-sm text-steel-soft shadow-sm">
       Loading map…
     </div>
   ),

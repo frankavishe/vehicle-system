@@ -38,7 +38,7 @@ export default async function TrackServiceRequestPage({
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">
+          <h1 className="font-display text-3xl font-bold text-asphalt">
             {serviceRequest.service_type === "RECOVERY" ? "Recovery tracking" : "Mechanic tracking"}
           </h1>
           <span className="text-sm text-steel-soft">Requested {formatDate(serviceRequest.created_at)}</span>
@@ -53,7 +53,7 @@ export default async function TrackServiceRequestPage({
       </div>
 
       {!serviceRequest.provider ? (
-        <p className="border border-line bg-surface-raised p-4 text-sm text-steel">
+        <p className="rounded-2xl border border-line bg-surface-raised p-4 text-sm text-steel shadow-sm">
           Still waiting for a provider to accept this request — the map appears once one does.
         </p>
       ) : !accessToken ? (
@@ -71,12 +71,12 @@ export default async function TrackServiceRequestPage({
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2 border border-line bg-surface-raised p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-steel">Customer</h2>
+        <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
+          <h2 className="text-sm font-medium text-steel">Customer</h2>
           <p className="text-sm text-steel">{serviceRequest.customer.full_name}</p>
         </div>
-        <div className="flex flex-col gap-2 border border-line bg-surface-raised p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-steel">Provider</h2>
+        <div className="flex flex-col gap-2 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm">
+          <h2 className="text-sm font-medium text-steel">Provider</h2>
           <p className="text-sm text-steel">{serviceRequest.provider?.full_name ?? "Not yet assigned"}</p>
         </div>
       </div>

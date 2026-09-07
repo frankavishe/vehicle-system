@@ -15,7 +15,7 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Users</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Users</h1>
       <UserManager initialUsers={page.results} />
     </div>
   );

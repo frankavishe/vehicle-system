@@ -62,8 +62,8 @@ export function ActiveJobList({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="font-display text-xl font-bold uppercase tracking-tight text-asphalt">Active tows</h2>
-      <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+      <h2 className="font-display text-xl font-bold text-asphalt">Active tows</h2>
+      <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
         {jobs.length === 0 && (
           <p className="p-4 text-sm text-steel-soft">No active tows right now.</p>
         )}

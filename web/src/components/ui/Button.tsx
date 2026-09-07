@@ -4,14 +4,14 @@ import type { ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 const base =
-  "inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold uppercase " +
-  "tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold " +
+  "transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-hazard text-white hover:bg-hazard-dark",
+  primary: "bg-primary text-white shadow-sm hover:bg-primary-dark",
   secondary: "bg-asphalt text-white hover:bg-steel",
-  ghost: "border border-line bg-transparent text-asphalt hover:bg-surface-raised",
-  danger: "bg-stop text-white hover:bg-stop/90",
+  ghost: "border border-line bg-transparent text-asphalt hover:border-asphalt hover:bg-surface-raised",
+  danger: "bg-stop text-white shadow-sm hover:bg-stop/90",
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

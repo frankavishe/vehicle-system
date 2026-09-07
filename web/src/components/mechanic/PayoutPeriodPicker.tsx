@@ -15,7 +15,7 @@ export function PayoutPeriodPicker({
   onChange: (period: PayoutPeriod) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 border border-line bg-surface-raised p-4 sm:flex-row sm:items-end">
+    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:flex-row sm:items-end">
       <Field label="From" htmlFor="payout-period-start">
         <Input
           id="payout-period-start"

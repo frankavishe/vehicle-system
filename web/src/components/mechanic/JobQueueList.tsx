@@ -67,9 +67,9 @@ export function JobQueueList({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="font-display text-xl font-bold uppercase tracking-tight text-asphalt">Job queue</h2>
+      <h2 className="font-display text-xl font-bold text-asphalt">Job queue</h2>
       {error && <p className="text-sm text-stop">{error}</p>}
-      <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+      <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
         {visibleJobs.length === 0 && (
           <p className="p-4 text-sm text-steel-soft">No jobs waiting right now — check back once you&apos;re online.</p>
         )}

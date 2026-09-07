@@ -24,7 +24,7 @@ function dotIcon(colorVar: string) {
   });
 }
 
-const liveIcon = dotIcon("--color-hazard");
+const liveIcon = dotIcon("--color-primary");
 const pickupIcon = dotIcon("--color-signal");
 const dropoffIcon = dotIcon("--color-go");
 
@@ -174,7 +174,7 @@ export function TrackingMap({
       </div>
       {shareError && <p className="text-sm text-stop">{shareError}</p>}
 
-      <div className="h-96 w-full overflow-hidden border border-line">
+      <div className="h-96 w-full overflow-hidden rounded-2xl border border-line shadow-sm">
         <MapContainer center={[center.lat, center.lng]} zoom={13} className="h-full w-full">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

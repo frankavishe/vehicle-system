@@ -50,7 +50,10 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
+    <form
+      onSubmit={handleSubmit}
+      className="flex w-full max-w-sm flex-col gap-4 rounded-2xl border border-line bg-surface-raised p-6 shadow-sm"
+    >
       <Field label="Full name" htmlFor="full_name">
         <Input id="full_name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
       </Field>

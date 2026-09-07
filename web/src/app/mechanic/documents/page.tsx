@@ -7,7 +7,7 @@ export default async function MechanicDocumentsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Documents</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Documents</h1>
       <DocumentUploadList initialDocuments={page.results} />
     </div>
   );

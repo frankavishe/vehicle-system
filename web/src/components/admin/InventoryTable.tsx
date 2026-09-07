@@ -14,7 +14,7 @@ export function InventoryTable({ initialParts }: { initialParts: SparePart[] }) 
   const [parts, setParts] = useState(initialParts);
 
   return (
-    <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+    <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
       {parts.map((part) => (
         <InventoryRow
           key={part.id}
@@ -53,7 +53,7 @@ function InventoryRow({ part, onAdjusted }: { part: SparePart; onAdjusted: (part
     <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold text-asphalt">{part.title}</span>
-        <span className="font-mono text-xs text-steel-soft">
+        <span className="text-xs text-steel-soft">
           SKU {part.sku} · {formatTZS(part.price)}
         </span>
       </div>

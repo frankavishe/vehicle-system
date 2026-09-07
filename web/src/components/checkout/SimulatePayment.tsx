@@ -32,11 +32,9 @@ export function SimulatePayment({ paymentId, redirectUrl }: { paymentId: string;
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 border-2 border-line bg-surface-raised p-10 text-center">
-      <p className="text-xs font-semibold uppercase tracking-wide text-steel">
-        Simulated gateway — no real money moves
-      </p>
-      <h1 className="font-display text-2xl font-bold uppercase tracking-tight text-asphalt">Test payment</h1>
+    <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-line bg-surface-raised p-10 text-center shadow-sm">
+      <p className="text-xs font-medium text-steel">Simulated gateway — no real money moves</p>
+      <h1 className="font-display text-2xl font-bold text-asphalt">Test payment</h1>
       <p className="text-sm text-steel">Standing in for the real Flutterwave/Selcom hosted checkout page.</p>
       {error ? <p className="text-sm text-stop">{error}</p> : null}
       <div className="flex flex-col gap-3 sm:flex-row">

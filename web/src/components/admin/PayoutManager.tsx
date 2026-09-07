@@ -24,19 +24,19 @@ export function PayoutManager({ initialPayouts }: { initialPayouts: Payout[] }) 
     <div className="flex flex-col gap-6">
       <ManualTriggerForm onTriggered={(created) => setPayouts([...created, ...payouts])} />
 
-      <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+      <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
         {payouts.length === 0 && <p className="p-4 text-sm text-steel-soft">No payouts yet.</p>}
         {payouts.map((payout) => (
           <div key={payout.id} className="flex items-center justify-between gap-4 p-4">
             <div className="flex flex-col gap-0.5">
-              <span className="font-mono text-xs text-steel-soft">
+              <span className="text-xs text-steel-soft">
                 Provider {payout.provider.slice(0, 8)} · {formatDate(payout.created_at)}
                 {payout.is_manual ? " · manual" : ""}
               </span>
               <span className="text-sm text-steel">{payout.items.length} completed job(s)</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="font-mono text-sm text-asphalt">{formatTZS(payout.amount)}</span>
+              <span className="text-sm text-asphalt">{formatTZS(payout.amount)}</span>
               <Badge tone={statusTone[payout.status]}>{payout.status}</Badge>
             </div>
           </div>
@@ -73,7 +73,7 @@ function ManualTriggerForm({ onTriggered }: { onTriggered: (payouts: Payout[]) =
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 border border-line bg-surface-raised p-4 sm:flex-row sm:items-end"
+      className="flex flex-col gap-3 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:flex-row sm:items-end"
     >
       <Field label="Provider ID (manual / off-cycle payout)" htmlFor="manual-payout-provider">
         <Input

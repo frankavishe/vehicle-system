@@ -11,7 +11,7 @@ export default async function MechanicDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">Dashboard</h1>
+      <h1 className="font-display text-3xl font-bold text-asphalt">Dashboard</h1>
       <AvailabilityToggle initialIsAvailable={availability.is_available} />
       <JobQueueList initialJobs={jobs} />
     </div>

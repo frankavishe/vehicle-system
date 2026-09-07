@@ -36,14 +36,12 @@ export default async function CatalogPage({
 
       <div className="flex flex-col gap-5">
         <div className="flex items-baseline justify-between">
-          <h1 className="font-display text-3xl font-bold uppercase tracking-tight text-asphalt">
-            Catalog
-          </h1>
+          <h1 className="font-display text-3xl font-bold text-asphalt">Catalog</h1>
           <span className="text-sm text-steel-soft">{parts.count} parts</span>
         </div>
 
         {parts.results.length === 0 ? (
-          <p className="border border-dashed border-line bg-surface-raised p-8 text-center text-sm text-steel">
+          <p className="rounded-2xl border border-dashed border-line bg-surface-raised p-8 text-center text-sm text-steel">
             No parts match those filters. Try widening the search.
           </p>
         ) : (

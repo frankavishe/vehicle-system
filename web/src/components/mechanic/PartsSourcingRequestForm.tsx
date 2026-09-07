@@ -52,9 +52,7 @@ export function PartsSourcingRequestForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="font-display text-xl font-bold uppercase tracking-tight text-asphalt">
-        Parts sourcing
-      </h2>
+      <h2 className="font-display text-xl font-bold text-asphalt">Parts sourcing</h2>
 
       {isActive ? (
         <RequestForm
@@ -62,14 +60,14 @@ export function PartsSourcingRequestForm({
           onCreated={(created) => setRequests([created, ...requests])}
         />
       ) : (
-        <p className="border border-line bg-surface-raised p-4 text-sm text-steel-soft">
+        <p className="rounded-2xl border border-line bg-surface-raised p-4 text-sm text-steel-soft shadow-sm">
           This job is no longer active — new parts requests can&apos;t be submitted against it.
         </p>
       )}
 
       {loadError && <p className="text-sm text-stop">{loadError}</p>}
 
-      <div className="flex flex-col divide-y divide-line border border-line bg-surface-raised">
+      <div className="flex flex-col divide-y divide-line rounded-2xl border border-line bg-surface-raised shadow-sm">
         {requests.length === 0 && (
           <p className="p-4 text-sm text-steel-soft">No parts requested for this job yet.</p>
         )}
@@ -129,7 +127,7 @@ function RequestForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 border border-line bg-surface-raised p-4 sm:flex-row sm:items-end"
+      className="flex flex-col gap-3 rounded-2xl border border-line bg-surface-raised p-4 shadow-sm sm:flex-row sm:items-end"
     >
       <Field label="Spare part" htmlFor="parts-request-part">
         <Select
