@@ -57,6 +57,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _password.text,
             role: _roleWireValue(_role),
           );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account created — please log in.')),
+      );
+      context.go('/login');
     } on DioException catch (e) {
       setState(() => _error = _extractError(e));
     } finally {
