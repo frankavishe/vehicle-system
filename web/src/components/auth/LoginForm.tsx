@@ -13,6 +13,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useAuth();
+  const registered = searchParams.get("registered") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
         />
       </Field>
+      {registered ? <p className="text-sm text-steel">Account created — please log in.</p> : null}
       {error ? <p className="text-sm text-stop">{error}</p> : null}
       <Button type="submit" disabled={submitting}>
         {submitting ? "Signing in…" : "Sign in"}

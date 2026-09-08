@@ -6,12 +6,10 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { SELF_SERVICE_ROLES, type SessionUser, type UserRole } from "@/lib/types";
+import { SELF_SERVICE_ROLES, type UserRole } from "@/lib/types";
 
 export function RegisterForm() {
   const router = useRouter();
-  const { setUser } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -35,15 +33,7 @@ export function RegisterForm() {
         setError(extractRegisterError(body));
         return;
       }
-      if (body.user) {
-        setUser(body.user as SessionUser);
-        router.push("/");
-        router.refresh();
-      } else {
-        // Account created but the follow-up auto-login didn't land — see
-        // src/app/api/auth/register/route.ts.
-        router.push("/login");
-      }
+      router.push("/login?registered=1");
     } finally {
       setSubmitting(false);
     }

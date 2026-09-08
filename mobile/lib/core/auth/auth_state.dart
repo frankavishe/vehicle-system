@@ -68,10 +68,8 @@ class AuthController extends AsyncNotifier<AuthUser?> {
       'password': password,
       'role': role,
     });
-    // Register returns the created user, no tokens — chain an immediate
-    // login so signup lands the user straight in (same pattern as web/'s
-    // register page).
-    await login(email: email, password: password);
+    // Deliberately no auto-login here — the user should land back on the
+    // login screen and sign in explicitly after creating an account.
   }
 
   Future<void> logout() async {
