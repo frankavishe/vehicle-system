@@ -9,6 +9,7 @@ import { Field, Select, Textarea } from "@/components/ui/Field";
 import { LocationPickerMapClientOnly } from "@/components/requests/LocationPickerMapClientOnly";
 import { apiFetch } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
+import { reverseGeocode } from "@/lib/geocoding";
 import type { LatLng, ServiceRequest, ServiceType } from "@/lib/types";
 
 // Dar es Salaam — matches the backend's own test/demo fixture
@@ -45,6 +46,9 @@ export function RequestServiceForm() {
   const [description, setDescription] = useState("");
   const [pickup, setPickup] = useState<LatLng | null>(null);
   const [dropoff, setDropoff] = useState<LatLng | null>(null);
+  const [pickupAddress, setPickupAddress] = useState<string | null>(null);
+  const [dropoffAddress, setDropoffAddress] = useState<string | null>(null);
+  const [addressResolving, setAddressResolving] = useState<"pickup" | "dropoff" | null>(null);
   const [locating, setLocating] = useState<"pickup" | "dropoff" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,11 +64,27 @@ export function RequestServiceForm() {
       const position = await getCurrentPosition();
       if (which === "pickup") setPickup(position);
       else setDropoff(position);
+      resolveAddress(which, position);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't get your location.");
     } finally {
       setLocating(null);
     }
+  }
+
+  /** Fire-and-forget reverse geocode for a freshly captured/picked point —
+   * never awaited by capture()/onPick, so it can never block a capture or
+   * the submit button. */
+  function resolveAddress(which: "pickup" | "dropoff", point: LatLng) {
+    setAddressResolving(which);
+    if (which === "pickup") setPickupAddress(null);
+    else setDropoffAddress(null);
+
+    reverseGeocode(point.lat, point.lng).then((address) => {
+      if (which === "pickup") setPickupAddress(address);
+      else setDropoffAddress(address);
+      setAddressResolving((current) => (current === which ? null : current));
+    });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -87,8 +107,10 @@ export function RequestServiceForm() {
           service_type: serviceType,
           pickup_lat: pickup.lat,
           pickup_lng: pickup.lng,
+          pickup_address: pickupAddress ?? undefined,
           dropoff_lat: dropoff?.lat,
           dropoff_lng: dropoff?.lng,
+          dropoff_address: dropoffAddress ?? undefined,
           problem_description: description.trim() || undefined,
         },
       });
@@ -109,6 +131,7 @@ export function RequestServiceForm() {
           onChange={(e) => {
             setServiceType(e.target.value as ServiceType);
             setDropoff(null);
+            setDropoffAddress(null);
             setPickingDropoff(false);
           }}
         >
@@ -133,6 +156,8 @@ export function RequestServiceForm() {
       <LocationField
         label="Pickup location"
         position={pickup}
+        address={pickupAddress}
+        resolving={addressResolving === "pickup"}
         loading={locating === "pickup"}
         onCapture={() => capture("pickup")}
       />
@@ -142,6 +167,8 @@ export function RequestServiceForm() {
           <LocationField
             label="Drop-off location"
             position={dropoff}
+            address={dropoffAddress}
+            resolving={addressResolving === "dropoff"}
             loading={locating === "dropoff"}
             onCapture={() => capture("dropoff")}
             onPickMap={() => setPickingDropoff((v) => !v)}
@@ -155,7 +182,10 @@ export function RequestServiceForm() {
               <LocationPickerMapClientOnly
                 center={pickup ?? FALLBACK_CENTER}
                 picked={dropoff}
-                onPick={setDropoff}
+                onPick={(point) => {
+                  setDropoff(point);
+                  resolveAddress("dropoff", point);
+                }}
               />
               <div className="flex items-center justify-between gap-3">
                 <Button
@@ -187,12 +217,19 @@ export function RequestServiceForm() {
 function LocationField({
   label,
   position,
+  address,
+  resolving,
   loading,
   onCapture,
   onPickMap,
 }: {
   label: string;
   position: LatLng | null;
+  // Reverse-geocoded (Nominatim) display name for `position`, and whether
+  // that lookup is still in flight — mirrors mobile/.../request_service_
+  // screen.dart's _LocationTile three-state display.
+  address: string | null;
+  resolving: boolean;
   loading: boolean;
   onCapture: () => void;
   // Only drop-off passes this — pickup is always "wherever the customer
@@ -206,7 +243,11 @@ function LocationField({
       <div className="flex flex-col gap-0.5">
         <span className="text-xs font-medium text-steel">{label}</span>
         <span className="text-sm text-steel-soft">
-          {position ? `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : "Not captured yet"}
+          {!position
+            ? "Not captured yet"
+            : resolving
+              ? "Locating address…"
+              : (address ?? `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`)}
         </span>
       </div>
       <div className="flex items-center gap-2">

@@ -15,6 +15,7 @@ def test_customer_creates_mechanic_request(auth_client, customer_user):
             "service_type": "MECHANIC",
             "pickup_lat": -6.7924,
             "pickup_lng": 39.2083,
+            "pickup_address": "Uhuru Street, Ilala",
             "problem_description": "Flat tyre.",
         },
     )
@@ -22,13 +23,34 @@ def test_customer_creates_mechanic_request(auth_client, customer_user):
     assert response.data["service_type"] == ServiceType.MECHANIC
     assert response.data["status"] == ServiceStatus.PENDING
     assert response.data["pickup_location"] == {"lat": -6.7924, "lng": 39.2083}
+    assert response.data["pickup_address"] == "Uhuru Street, Ilala"
     assert response.data["dropoff_location"] is None
+    assert response.data["dropoff_address"] is None
 
     sr = ServiceRequest.objects.get(customer=customer_user)
     assert sr.provider is None
+    assert sr.pickup_address == "Uhuru Street, Ilala"
     # Phase 4: MECHANIC requests (no dropoff) get a flat FARE_BASE_FEE
     # estimate at creation (apps/dispatch/services/fare.py).
     assert response.data["estimated_fare"] is not None
+
+
+def test_create_without_addresses_defaults_to_null(auth_client, customer_user):
+    # Regression guard: callers that don't send pickup_address/
+    # dropoff_address (old app builds, or any client that predates
+    # reverse-geocoding) must keep working, with both fields simply null.
+    client = auth_client(customer_user)
+    response = client.post(
+        reverse("service-requests-list-create"),
+        {"service_type": "MECHANIC", "pickup_lat": -6.7924, "pickup_lng": 39.2083},
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data["pickup_address"] is None
+    assert response.data["dropoff_address"] is None
+
+    sr = ServiceRequest.objects.get(customer=customer_user)
+    assert sr.pickup_address is None
+    assert sr.dropoff_address is None
 
 
 def test_recovery_requires_dropoff(auth_client, customer_user):

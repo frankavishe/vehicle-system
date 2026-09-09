@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' as ll;
 
+import '../../../core/api/nominatim_client.dart';
+import '../../../shared/models/captured_location.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
 
@@ -12,8 +14,8 @@ import '../../../shared/widgets/app_card.dart';
 /// drop-off in particular: the customer is standing next to their broken
 /// vehicle, not at the garage they want it towed to, so a plain GPS
 /// capture (as pickup uses) can never express that point. Returns the
-/// picked point via `context.pop(ll.LatLng)`; null if backed out of
-/// without picking one.
+/// picked point via `context.pop(CapturedLocation)`; null if backed out
+/// of without picking one.
 class LocationPickerScreen extends StatefulWidget {
   const LocationPickerScreen({super.key, this.initialCenter});
 
@@ -33,9 +35,22 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   static const _fallbackCenter = ll.LatLng(-6.7924, 39.2083);
 
   final _mapController = MapController();
-  ll.LatLng? _picked;
+  final _nominatim = NominatimClient();
+  CapturedLocation? _picked;
   bool _locating = false;
   String? _error;
+
+  void _pickPoint(ll.LatLng point) {
+    setState(() {
+      _error = null;
+      _picked = CapturedLocation(point: point, resolving: true);
+    });
+    _nominatim.reverseGeocode(lat: point.latitude, lng: point.longitude).then((address) {
+      // Guard against a slower, now-stale lookup overwriting a newer pick.
+      if (!mounted || _picked?.point != point) return;
+      setState(() => _picked = CapturedLocation(point: point, address: address));
+    });
+  }
 
   Future<void> _useMyLocation() async {
     setState(() {
@@ -58,7 +73,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       final position = await Geolocator.getCurrentPosition();
       final point = ll.LatLng(position.latitude, position.longitude);
       _mapController.move(point, 15);
-      setState(() => _picked = point);
+      _pickPoint(point);
     } finally {
       if (mounted) setState(() => _locating = false);
     }
@@ -88,10 +103,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             options: MapOptions(
               initialCenter: center,
               initialZoom: 13,
-              onTap: (_, point) => setState(() {
-                _error = null;
-                _picked = point;
-              }),
+              onTap: (_, point) => _pickPoint(point),
             ),
             children: [
               TileLayer(
@@ -102,7 +114,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: _picked!,
+                      point: _picked!.point,
                       width: 40,
                       height: 40,
                       alignment: Alignment.topCenter,
@@ -130,7 +142,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     AppCard(
                       padding: AppCardPadding.sm,
                       child: Text(
-                        '${_picked!.latitude.toStringAsFixed(5)}, ${_picked!.longitude.toStringAsFixed(5)}',
+                        _picked!.resolving
+                            ? 'Locating address…'
+                            : _picked!.address ??
+                                '${_picked!.point.latitude.toStringAsFixed(5)}, '
+                                    '${_picked!.point.longitude.toStringAsFixed(5)}',
                       ),
                     )
                   else

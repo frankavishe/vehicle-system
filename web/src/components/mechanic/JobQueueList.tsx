@@ -132,7 +132,8 @@ function JobQueueRow({
           {job.problem_description ?? "No description provided"}
         </span>
         <span className="text-xs text-steel-soft">
-          Pickup: {job.pickup_location.lat.toFixed(4)}, {job.pickup_location.lng.toFixed(4)}
+          Pickup:{" "}
+          {job.pickup_address ?? `${job.pickup_location.lat.toFixed(4)}, ${job.pickup_location.lng.toFixed(4)}`}
         </span>
       </Link>
       <div className="flex items-center gap-3">

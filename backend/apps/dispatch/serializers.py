@@ -23,6 +23,11 @@ class ServiceRequestCreateSerializer(serializers.Serializer):
     pickup_lng = serializers.FloatField()
     dropoff_lat = serializers.FloatField(required=False, allow_null=True)
     dropoff_lng = serializers.FloatField(required=False, allow_null=True)
+    # Client-resolved (Nominatim) display name for the coordinates above —
+    # a pure display convenience, never required or validated against the
+    # lat/lng.
+    pickup_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    dropoff_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     problem_description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, attrs):
@@ -44,7 +49,8 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
         model = ServiceRequest
         fields = [
             "id", "customer", "provider", "service_type", "status",
-            "pickup_location", "dropoff_location", "problem_description",
+            "pickup_location", "pickup_address", "dropoff_location", "dropoff_address",
+            "problem_description",
             "estimated_fare", "final_fare", "created_at",
             # 002-recovery-towing-web-portal: additive-only (plain model
             # fields on an already-fully-serialized model) — every existing
@@ -81,7 +87,9 @@ def build_service_request(*, customer, validated_data) -> ServiceRequest:
         customer=customer,
         service_type=service_type,
         pickup_location=pickup,
+        pickup_address=validated_data.get("pickup_address"),
         dropoff_location=dropoff,
+        dropoff_address=validated_data.get("dropoff_address"),
         problem_description=validated_data.get("problem_description"),
         # Phase 4 (PLAN.md §5.2): OSRM/Haversine for RECOVERY, flat
         # FARE_BASE_FEE for MECHANIC (no dropoff to price a distance from).

@@ -44,14 +44,15 @@ export function JobDetailClient({
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Pickup</h2>
           <p className="text-sm text-steel">
-            {job.pickup_location.lat.toFixed(5)}, {job.pickup_location.lng.toFixed(5)}
+            {job.pickup_address ?? `${job.pickup_location.lat.toFixed(5)}, ${job.pickup_location.lng.toFixed(5)}`}
           </p>
         </Card>
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Dropoff</h2>
           <p className="text-sm text-steel">
             {job.dropoff_location
-              ? `${job.dropoff_location.lat.toFixed(5)}, ${job.dropoff_location.lng.toFixed(5)}`
+              ? (job.dropoff_address ??
+                `${job.dropoff_location.lat.toFixed(5)}, ${job.dropoff_location.lng.toFixed(5)}`)
               : "Not set"}
           </p>
         </Card>
