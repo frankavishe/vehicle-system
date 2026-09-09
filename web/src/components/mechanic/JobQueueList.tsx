@@ -21,12 +21,20 @@ const QUEUE_POLL_INTERVAL_MS = 10000;
 export function JobQueueList({
   initialJobs,
   jobHrefBase = "/mechanic/jobs",
+  selectedJobId,
+  onSelectJob,
 }: {
   initialJobs: ServiceRequest[];
   // Recovery's Dispatch page reuses this same component (no
   // mechanic-specific logic here) but its job detail pages live under
   // /recovery/jobs, not /mechanic/jobs.
   jobHrefBase?: string;
+  // Recovery's Dispatch page passes both of these so a click focuses the
+  // job on ActiveTowMap instead of navigating away to its detail page —
+  // the mechanic dashboard has no map, so it leaves these unset and keeps
+  // the plain Link-to-detail-page behavior below.
+  selectedJobId?: string | null;
+  onSelectJob?: (job: ServiceRequest) => void;
 }) {
   const [jobs, setJobs] = useState(initialJobs);
   const [declinedIds, setDeclinedIds] = useState<Set<string>>(new Set());
@@ -78,6 +86,8 @@ export function JobQueueList({
             key={job.id}
             job={job}
             jobHrefBase={jobHrefBase}
+            selected={job.id === selectedJobId}
+            onSelectJob={onSelectJob}
             onAccepted={setJobs}
             onDecline={() => decline(job.id)}
           />
@@ -90,11 +100,15 @@ export function JobQueueList({
 function JobQueueRow({
   job,
   jobHrefBase,
+  selected,
+  onSelectJob,
   onAccepted,
   onDecline,
 }: {
   job: ServiceRequest;
   jobHrefBase: string;
+  selected: boolean;
+  onSelectJob?: (job: ServiceRequest) => void;
   onAccepted: (updater: (jobs: ServiceRequest[]) => ServiceRequest[]) => void;
   onDecline: () => void;
 }) {
@@ -125,17 +139,33 @@ function JobQueueRow({
     }
   }
 
+  const details = (
+    <>
+      <span className="text-sm font-semibold text-asphalt">
+        {job.problem_description ?? "No description provided"}
+      </span>
+      <span className="text-xs text-steel-soft">
+        Pickup:{" "}
+        {job.pickup_address ?? `${job.pickup_location.lat.toFixed(4)}, ${job.pickup_location.lng.toFixed(4)}`}
+      </span>
+    </>
+  );
+
   return (
-    <div className="flex items-center justify-between gap-4 p-4">
-      <Link href={`${jobHrefBase}/${job.id}`} className="flex flex-col gap-0.5 hover:opacity-80">
-        <span className="text-sm font-semibold text-asphalt">
-          {job.problem_description ?? "No description provided"}
-        </span>
-        <span className="text-xs text-steel-soft">
-          Pickup:{" "}
-          {job.pickup_address ?? `${job.pickup_location.lat.toFixed(4)}, ${job.pickup_location.lng.toFixed(4)}`}
-        </span>
-      </Link>
+    <div className={`flex items-center justify-between gap-4 p-4 ${selected ? "bg-primary-soft" : ""}`}>
+      {onSelectJob ? (
+        <button
+          type="button"
+          onClick={() => onSelectJob(job)}
+          className="flex flex-col gap-0.5 text-left hover:opacity-80"
+        >
+          {details}
+        </button>
+      ) : (
+        <Link href={`${jobHrefBase}/${job.id}`} className="flex flex-col gap-0.5 hover:opacity-80">
+          {details}
+        </Link>
+      )}
       <div className="flex items-center gap-3">
         <ServiceRequestStatusBadge status={job.status} />
         {job.status === "PENDING" && !job.provider && (

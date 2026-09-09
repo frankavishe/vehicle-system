@@ -19,8 +19,10 @@ const ActiveTowMap = dynamic(() => import("./ActiveTowMap").then((m) => m.Active
 
 export function ActiveTowMapClientOnly(props: {
   initialJobs: ServiceRequest[];
+  pendingJobs?: ServiceRequest[];
   wsBaseUrl: string;
   accessToken: string;
+  selectedJobId?: string | null;
 }) {
   return <ActiveTowMap {...props} />;
 }

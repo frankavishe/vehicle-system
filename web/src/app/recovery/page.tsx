@@ -1,11 +1,9 @@
-import { ActiveJobList } from "@/components/recovery/ActiveJobList";
-import { ActiveTowMapClientOnly } from "@/components/recovery/ActiveTowMapClientOnly";
 // Both generic (PATCH /providers/me/availability, accept/decline against
 // /service-requests/{id}/accept — no mechanic-specific logic) — already
 // reused the same way by recovery/jobs/[id]/JobDetailClient.tsx's
 // JobStatusControl import.
 import { AvailabilityToggle } from "@/components/mechanic/AvailabilityToggle";
-import { JobQueueList } from "@/components/mechanic/JobQueueList";
+import { RecoveryDispatchBoard } from "@/components/recovery/RecoveryDispatchBoard";
 import { apiFetch } from "@/lib/api/server";
 import { getAccessToken } from "@/lib/auth/session";
 import type { ServiceRequest, ServiceRequestStatus } from "@/lib/types";
@@ -41,16 +39,12 @@ export default async function RecoveryDispatchPage() {
 
       <AvailabilityToggle initialIsAvailable={availability.is_available} />
 
-      <JobQueueList initialJobs={pendingJobs} jobHrefBase="/recovery/jobs" />
-
-      {!accessToken ? (
-        <p className="text-sm text-stop">Your session expired — please log in again to see live tracking.</p>
-      ) : (
-        <>
-          <ActiveTowMapClientOnly initialJobs={activeJobs} wsBaseUrl={WS_BASE_URL} accessToken={accessToken} />
-          <ActiveJobList initialJobs={activeJobs} wsBaseUrl={WS_BASE_URL} accessToken={accessToken} />
-        </>
-      )}
+      <RecoveryDispatchBoard
+        pendingJobs={pendingJobs}
+        activeJobs={activeJobs}
+        wsBaseUrl={WS_BASE_URL}
+        accessToken={accessToken}
+      />
     </div>
   );
 }

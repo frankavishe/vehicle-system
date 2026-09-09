@@ -5,9 +5,11 @@ import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { JobStatusControl } from "@/components/mechanic/JobStatusControl";
 import { PartsSourcingRequestForm } from "@/components/mechanic/PartsSourcingRequestForm";
+import { JobLocationMapClientOnly } from "@/components/tracking/JobLocationMapClientOnly";
 import { ServiceRequestStatusBadge } from "@/components/tracking/ServiceRequestStatusBadge";
 import { formatDate } from "@/lib/format";
 import type { ServiceRequest } from "@/lib/types";
+import { useResolvedAddress } from "@/lib/useResolvedAddress";
 
 /** Holds the mutable job state across accept/status updates — a Server
  * Component page can't hold state, so this thin client wrapper is what
@@ -21,6 +23,7 @@ export function JobDetailClient({
 }) {
   const [job, setJob] = useState(initialJob);
   const isAssignedToMe = job.provider?.id === currentUserId;
+  const pickupLabel = useResolvedAddress(job.pickup_address, job.pickup_location);
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,6 +34,12 @@ export function JobDetailClient({
         </div>
         <ServiceRequestStatusBadge status={job.status} />
       </div>
+
+      {/* Mechanic jobs are pickup-only in the cards below (no dropoff
+          field is shown), but a job can still carry a dropoff_location —
+          JobLocationMap already renders that pin too when present, same
+          as recovery/jobs/[id]/JobDetailClient.tsx. */}
+      <JobLocationMapClientOnly pickup={job.pickup_location} dropoff={job.dropoff_location} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card padding="sm" className="flex flex-col gap-2">
@@ -43,9 +52,7 @@ export function JobDetailClient({
         </Card>
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Pickup</h2>
-          <p className="text-sm text-steel">
-            {job.pickup_address ?? `${job.pickup_location.lat.toFixed(5)}, ${job.pickup_location.lng.toFixed(5)}`}
-          </p>
+          <p className="text-sm text-steel">{pickupLabel}</p>
         </Card>
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Fare</h2>

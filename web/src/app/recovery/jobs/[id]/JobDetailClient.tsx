@@ -5,9 +5,11 @@ import { useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { FareEstimateCard } from "@/components/recovery/FareEstimateCard";
 import { JobStatusControl } from "@/components/mechanic/JobStatusControl";
+import { JobLocationMapClientOnly } from "@/components/tracking/JobLocationMapClientOnly";
 import { ServiceRequestStatusBadge } from "@/components/tracking/ServiceRequestStatusBadge";
 import { formatDate } from "@/lib/format";
 import type { ServiceRequest } from "@/lib/types";
+import { useResolvedAddress } from "@/lib/useResolvedAddress";
 
 /** Mirrors web/src/app/mechanic/jobs/[id]/JobDetailClient.tsx — same
  * generic JobStatusControl (accept -> EN_ROUTE -> IN_PROGRESS ->
@@ -23,6 +25,8 @@ export function JobDetailClient({
   currentUserId: string;
 }) {
   const [job, setJob] = useState(initialJob);
+  const pickupLabel = useResolvedAddress(job.pickup_address, job.pickup_location);
+  const dropoffLabel = useResolvedAddress(job.dropoff_address, job.dropoff_location);
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,6 +38,8 @@ export function JobDetailClient({
         <ServiceRequestStatusBadge status={job.status} />
       </div>
 
+      <JobLocationMapClientOnly pickup={job.pickup_location} dropoff={job.dropoff_location} />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Customer</h2>
@@ -43,18 +49,11 @@ export function JobDetailClient({
         </Card>
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Pickup</h2>
-          <p className="text-sm text-steel">
-            {job.pickup_address ?? `${job.pickup_location.lat.toFixed(5)}, ${job.pickup_location.lng.toFixed(5)}`}
-          </p>
+          <p className="text-sm text-steel">{pickupLabel}</p>
         </Card>
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Dropoff</h2>
-          <p className="text-sm text-steel">
-            {job.dropoff_location
-              ? (job.dropoff_address ??
-                `${job.dropoff_location.lat.toFixed(5)}, ${job.dropoff_location.lng.toFixed(5)}`)
-              : "Not set"}
-          </p>
+          <p className="text-sm text-steel">{dropoffLabel}</p>
         </Card>
         <Card padding="sm" className="flex flex-col gap-2">
           <h2 className="text-sm font-medium text-steel">Problem</h2>
