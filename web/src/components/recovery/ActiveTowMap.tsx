@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 
 import { divIcon } from "leaflet";
 import { useEffect, useState } from "react";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
 import { ServiceRequestStatusBadge } from "@/components/tracking/ServiceRequestStatusBadge";
 import type { LatLng, ServiceRequest, ServiceRequestStatus } from "@/lib/types";
@@ -22,15 +22,41 @@ const ACTIVE_STATUSES: ServiceRequestStatus[] = ["ACCEPTED", "EN_ROUTE", "IN_PRO
 const STALE_AFTER_MS = 30000;
 const STALENESS_TICK_MS = 5000;
 
-function markerIcon(stale: boolean) {
+function markerIcon(color: string, selected: boolean) {
+  // A job clicked in the Job queue / Active tows list gets a visibly
+  // bigger marker with a highlight ring so "show it on the map" reads as
+  // an obvious, findable change rather than a subtle color shift.
+  const size = selected ? 22 : 14;
   return divIcon({
     className: "",
-    html: `<span style="display:block;width:14px;height:14px;border-radius:9999px;background:var(${
-      stale ? "--color-steel-soft" : "--color-primary"
-    });border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.25)"></span>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:var(${color});border:2px solid white;box-shadow:${
+      // Red ring reads as "selected" against both the green active-tow
+      // dots and the blue pending-pickup pins without matching either.
+      selected ? "0 0 0 4px var(--color-stop)," : ""
+    }0 0 0 1px rgba(0,0,0,0.25)"></span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
+}
+
+// PENDING jobs have no live socket position yet (no provider assigned to
+// open a tracking connection for), so they render at their static
+// pickup_location instead — --color-signal matches the "pickup" pin color
+// TrackingMap.tsx already uses, distinguishing it from the live
+// green/grey tow dots below.
+function pendingMarkerIcon(selected: boolean) {
+  return markerIcon("--color-signal", selected);
+}
+
+/** Recenters/zooms the map whenever the selected job (from the Job queue
+ * or Active tows list) or its known position changes — this is the "show
+ * it on the map" behavior a click in either list triggers. */
+function FlyToSelection({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) map.flyTo(position, Math.max(map.getZoom(), 14));
+  }, [map, position]);
+  return null;
 }
 
 interface JobPosition {
@@ -48,12 +74,20 @@ interface JobPosition {
  * web/src/components/tracking/TrackingMap.tsx). */
 export function ActiveTowMap({
   initialJobs,
+  pendingJobs = [],
   wsBaseUrl,
   accessToken,
+  selectedJobId,
 }: {
   initialJobs: ServiceRequest[];
+  // PENDING, unassigned jobs from the Job queue — plotted at their static
+  // pickup_location since there's no tracking socket for them yet.
+  pendingJobs?: ServiceRequest[];
   wsBaseUrl: string;
   accessToken: string;
+  // Set by clicking a row in the Job queue or Active tows list — pans the
+  // map to that job and highlights its marker.
+  selectedJobId?: string | null;
 }) {
   const [jobs, setJobs] = useState(initialJobs);
   const [positions, setPositions] = useState<Record<string, JobPosition>>({});
@@ -115,6 +149,17 @@ export function ActiveTowMap({
     ? ([positions[withPosition[0].id].lat, positions[withPosition[0].id].lng] as [number, number])
     : DEFAULT_CENTER;
 
+  // The selected job's own position — its live tracked position if it's
+  // an active tow, otherwise its static pickup_location if it's a
+  // still-PENDING job from the Job queue. Feeds FlyToSelection below.
+  const selectedPosition: [number, number] | null = (() => {
+    if (!selectedJobId) return null;
+    const pos = positions[selectedJobId];
+    if (pos) return [pos.lat, pos.lng];
+    const pending = pendingJobs.find((job) => job.id === selectedJobId);
+    return pending ? [pending.pickup_location.lat, pending.pickup_location.lng] : null;
+  })();
+
   return (
     <div className="h-[32rem] w-full overflow-hidden rounded-2xl border border-line shadow-sm">
       <MapContainer center={center} zoom={12} className="h-full w-full">
@@ -122,6 +167,22 @@ export function ActiveTowMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <FlyToSelection position={selectedPosition} />
+        {pendingJobs.map((job) => (
+          <Marker
+            key={job.id}
+            position={[job.pickup_location.lat, job.pickup_location.lng]}
+            icon={pendingMarkerIcon(job.id === selectedJobId)}
+          >
+            <Popup>
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold">{job.problem_description ?? "No description provided"}</span>
+                <ServiceRequestStatusBadge status={job.status} />
+                <span className="text-xs text-steel-soft">Waiting for a provider to accept</span>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
         {withPosition.map((job) => {
           const pos = positions[job.id];
           const stale = now - pos.updatedAt > STALE_AFTER_MS;
@@ -130,7 +191,11 @@ export function ActiveTowMap({
           // still resolve to individually selectable, identifiable
           // markers rather than merging into one (SC-005 edge case).
           return (
-            <Marker key={job.id} position={[pos.lat, pos.lng]} icon={markerIcon(stale)}>
+            <Marker
+              key={job.id}
+              position={[pos.lat, pos.lng]}
+              icon={markerIcon(stale ? "--color-steel-soft" : "--color-primary", job.id === selectedJobId)}
+            >
               <Popup>
                 <div className="flex flex-col gap-1">
                   <span className="font-semibold">{job.customer.full_name}</span>

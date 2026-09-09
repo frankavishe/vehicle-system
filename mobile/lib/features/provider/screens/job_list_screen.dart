@@ -88,7 +88,8 @@ class JobListScreen extends ConsumerWidget {
                                 children: [
                                   Text(job.problemDescription ?? 'No description'),
                                   Text(
-                                    '${job.pickupLocation.lat.toStringAsFixed(4)}, ${job.pickupLocation.lng.toStringAsFixed(4)}',
+                                    job.pickupAddress ??
+                                        '${job.pickupLocation.lat.toStringAsFixed(4)}, ${job.pickupLocation.lng.toStringAsFixed(4)}',
                                     style: Theme.of(context).textTheme.bodySmall,
                                   ),
                                 ],

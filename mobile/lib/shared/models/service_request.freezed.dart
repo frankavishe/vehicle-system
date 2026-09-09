@@ -29,8 +29,12 @@ mixin _$ServiceRequestDto {
   ServiceStatus get status => throw _privateConstructorUsedError;
   @JsonKey(name: 'pickup_location')
   LatLngPoint get pickupLocation => throw _privateConstructorUsedError;
+  @JsonKey(name: 'pickup_address')
+  String? get pickupAddress => throw _privateConstructorUsedError;
   @JsonKey(name: 'dropoff_location')
   LatLngPoint? get dropoffLocation => throw _privateConstructorUsedError;
+  @JsonKey(name: 'dropoff_address')
+  String? get dropoffAddress => throw _privateConstructorUsedError;
   @JsonKey(name: 'problem_description')
   String? get problemDescription => throw _privateConstructorUsedError;
   @JsonKey(name: 'estimated_fare')
@@ -64,7 +68,9 @@ abstract class $ServiceRequestDtoCopyWith<$Res> {
     @JsonKey(name: 'service_type') ServiceType serviceType,
     ServiceStatus status,
     @JsonKey(name: 'pickup_location') LatLngPoint pickupLocation,
+    @JsonKey(name: 'pickup_address') String? pickupAddress,
     @JsonKey(name: 'dropoff_location') LatLngPoint? dropoffLocation,
+    @JsonKey(name: 'dropoff_address') String? dropoffAddress,
     @JsonKey(name: 'problem_description') String? problemDescription,
     @JsonKey(name: 'estimated_fare') String? estimatedFare,
     @JsonKey(name: 'final_fare') String? finalFare,
@@ -98,7 +104,9 @@ class _$ServiceRequestDtoCopyWithImpl<$Res, $Val extends ServiceRequestDto>
     Object? serviceType = null,
     Object? status = null,
     Object? pickupLocation = null,
+    Object? pickupAddress = freezed,
     Object? dropoffLocation = freezed,
+    Object? dropoffAddress = freezed,
     Object? problemDescription = freezed,
     Object? estimatedFare = freezed,
     Object? finalFare = freezed,
@@ -130,10 +138,18 @@ class _$ServiceRequestDtoCopyWithImpl<$Res, $Val extends ServiceRequestDto>
                 ? _value.pickupLocation
                 : pickupLocation // ignore: cast_nullable_to_non_nullable
                       as LatLngPoint,
+            pickupAddress: freezed == pickupAddress
+                ? _value.pickupAddress
+                : pickupAddress // ignore: cast_nullable_to_non_nullable
+                      as String?,
             dropoffLocation: freezed == dropoffLocation
                 ? _value.dropoffLocation
                 : dropoffLocation // ignore: cast_nullable_to_non_nullable
                       as LatLngPoint?,
+            dropoffAddress: freezed == dropoffAddress
+                ? _value.dropoffAddress
+                : dropoffAddress // ignore: cast_nullable_to_non_nullable
+                      as String?,
             problemDescription: freezed == problemDescription
                 ? _value.problemDescription
                 : problemDescription // ignore: cast_nullable_to_non_nullable
@@ -224,7 +240,9 @@ abstract class _$$ServiceRequestDtoImplCopyWith<$Res>
     @JsonKey(name: 'service_type') ServiceType serviceType,
     ServiceStatus status,
     @JsonKey(name: 'pickup_location') LatLngPoint pickupLocation,
+    @JsonKey(name: 'pickup_address') String? pickupAddress,
     @JsonKey(name: 'dropoff_location') LatLngPoint? dropoffLocation,
+    @JsonKey(name: 'dropoff_address') String? dropoffAddress,
     @JsonKey(name: 'problem_description') String? problemDescription,
     @JsonKey(name: 'estimated_fare') String? estimatedFare,
     @JsonKey(name: 'final_fare') String? finalFare,
@@ -261,7 +279,9 @@ class __$$ServiceRequestDtoImplCopyWithImpl<$Res>
     Object? serviceType = null,
     Object? status = null,
     Object? pickupLocation = null,
+    Object? pickupAddress = freezed,
     Object? dropoffLocation = freezed,
+    Object? dropoffAddress = freezed,
     Object? problemDescription = freezed,
     Object? estimatedFare = freezed,
     Object? finalFare = freezed,
@@ -293,10 +313,18 @@ class __$$ServiceRequestDtoImplCopyWithImpl<$Res>
             ? _value.pickupLocation
             : pickupLocation // ignore: cast_nullable_to_non_nullable
                   as LatLngPoint,
+        pickupAddress: freezed == pickupAddress
+            ? _value.pickupAddress
+            : pickupAddress // ignore: cast_nullable_to_non_nullable
+                  as String?,
         dropoffLocation: freezed == dropoffLocation
             ? _value.dropoffLocation
             : dropoffLocation // ignore: cast_nullable_to_non_nullable
                   as LatLngPoint?,
+        dropoffAddress: freezed == dropoffAddress
+            ? _value.dropoffAddress
+            : dropoffAddress // ignore: cast_nullable_to_non_nullable
+                  as String?,
         problemDescription: freezed == problemDescription
             ? _value.problemDescription
             : problemDescription // ignore: cast_nullable_to_non_nullable
@@ -328,7 +356,9 @@ class _$ServiceRequestDtoImpl implements _ServiceRequestDto {
     @JsonKey(name: 'service_type') required this.serviceType,
     required this.status,
     @JsonKey(name: 'pickup_location') required this.pickupLocation,
+    @JsonKey(name: 'pickup_address') this.pickupAddress,
     @JsonKey(name: 'dropoff_location') this.dropoffLocation,
+    @JsonKey(name: 'dropoff_address') this.dropoffAddress,
     @JsonKey(name: 'problem_description') this.problemDescription,
     @JsonKey(name: 'estimated_fare') this.estimatedFare,
     @JsonKey(name: 'final_fare') this.finalFare,
@@ -353,8 +383,14 @@ class _$ServiceRequestDtoImpl implements _ServiceRequestDto {
   @JsonKey(name: 'pickup_location')
   final LatLngPoint pickupLocation;
   @override
+  @JsonKey(name: 'pickup_address')
+  final String? pickupAddress;
+  @override
   @JsonKey(name: 'dropoff_location')
   final LatLngPoint? dropoffLocation;
+  @override
+  @JsonKey(name: 'dropoff_address')
+  final String? dropoffAddress;
   @override
   @JsonKey(name: 'problem_description')
   final String? problemDescription;
@@ -370,7 +406,7 @@ class _$ServiceRequestDtoImpl implements _ServiceRequestDto {
 
   @override
   String toString() {
-    return 'ServiceRequestDto(id: $id, customer: $customer, provider: $provider, serviceType: $serviceType, status: $status, pickupLocation: $pickupLocation, dropoffLocation: $dropoffLocation, problemDescription: $problemDescription, estimatedFare: $estimatedFare, finalFare: $finalFare, createdAt: $createdAt)';
+    return 'ServiceRequestDto(id: $id, customer: $customer, provider: $provider, serviceType: $serviceType, status: $status, pickupLocation: $pickupLocation, pickupAddress: $pickupAddress, dropoffLocation: $dropoffLocation, dropoffAddress: $dropoffAddress, problemDescription: $problemDescription, estimatedFare: $estimatedFare, finalFare: $finalFare, createdAt: $createdAt)';
   }
 
   @override
@@ -388,8 +424,12 @@ class _$ServiceRequestDtoImpl implements _ServiceRequestDto {
             (identical(other.status, status) || other.status == status) &&
             (identical(other.pickupLocation, pickupLocation) ||
                 other.pickupLocation == pickupLocation) &&
+            (identical(other.pickupAddress, pickupAddress) ||
+                other.pickupAddress == pickupAddress) &&
             (identical(other.dropoffLocation, dropoffLocation) ||
                 other.dropoffLocation == dropoffLocation) &&
+            (identical(other.dropoffAddress, dropoffAddress) ||
+                other.dropoffAddress == dropoffAddress) &&
             (identical(other.problemDescription, problemDescription) ||
                 other.problemDescription == problemDescription) &&
             (identical(other.estimatedFare, estimatedFare) ||
@@ -410,7 +450,9 @@ class _$ServiceRequestDtoImpl implements _ServiceRequestDto {
     serviceType,
     status,
     pickupLocation,
+    pickupAddress,
     dropoffLocation,
+    dropoffAddress,
     problemDescription,
     estimatedFare,
     finalFare,
@@ -442,7 +484,9 @@ abstract class _ServiceRequestDto implements ServiceRequestDto {
     @JsonKey(name: 'service_type') required final ServiceType serviceType,
     required final ServiceStatus status,
     @JsonKey(name: 'pickup_location') required final LatLngPoint pickupLocation,
+    @JsonKey(name: 'pickup_address') final String? pickupAddress,
     @JsonKey(name: 'dropoff_location') final LatLngPoint? dropoffLocation,
+    @JsonKey(name: 'dropoff_address') final String? dropoffAddress,
     @JsonKey(name: 'problem_description') final String? problemDescription,
     @JsonKey(name: 'estimated_fare') final String? estimatedFare,
     @JsonKey(name: 'final_fare') final String? finalFare,
@@ -467,8 +511,14 @@ abstract class _ServiceRequestDto implements ServiceRequestDto {
   @JsonKey(name: 'pickup_location')
   LatLngPoint get pickupLocation;
   @override
+  @JsonKey(name: 'pickup_address')
+  String? get pickupAddress;
+  @override
   @JsonKey(name: 'dropoff_location')
   LatLngPoint? get dropoffLocation;
+  @override
+  @JsonKey(name: 'dropoff_address')
+  String? get dropoffAddress;
   @override
   @JsonKey(name: 'problem_description')
   String? get problemDescription;

@@ -76,7 +76,9 @@ export function ActiveJobList({
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-asphalt">{job.customer.full_name}</span>
               <span className="text-xs text-steel-soft">
-                Pickup: {job.pickup_location.lat.toFixed(4)}, {job.pickup_location.lng.toFixed(4)}
+                Pickup:{" "}
+                {job.pickup_address ??
+                  `${job.pickup_location.lat.toFixed(4)}, ${job.pickup_location.lng.toFixed(4)}`}
               </span>
             </div>
             <ServiceRequestStatusBadge status={job.status} />

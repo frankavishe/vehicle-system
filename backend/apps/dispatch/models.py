@@ -42,10 +42,16 @@ class ServiceRequest(UUIDModel):
         max_length=20, choices=ServiceStatus.choices, default=ServiceStatus.PENDING
     )
     pickup_location = gis_models.PointField(srid=4326)
+    # Reverse-geocoded display name for pickup_location, resolved
+    # client-side (Nominatim) and persisted so it round-trips to every
+    # reader. Purely a display convenience — never required, never
+    # validated against pickup_location.
+    pickup_address = models.TextField(null=True, blank=True)
     # Mandatory for RECOVERY, enforced at the serializer level (a plain DB
     # nullable column can't conditionally require itself on a sibling
     # field's value).
     dropoff_location = gis_models.PointField(srid=4326, null=True, blank=True)
+    dropoff_address = models.TextField(null=True, blank=True)
     problem_description = models.TextField(null=True, blank=True)
     estimated_fare = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     final_fare = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

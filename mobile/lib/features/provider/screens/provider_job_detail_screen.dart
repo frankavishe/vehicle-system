@@ -131,12 +131,16 @@ class _JobDetailBodyState extends ConsumerState<_JobDetailBody> {
           const SizedBox(height: 16),
         ],
         Text('Pickup', style: Theme.of(context).textTheme.labelLarge),
-        Text('${sr.pickupLocation.lat.toStringAsFixed(5)}, ${sr.pickupLocation.lng.toStringAsFixed(5)}'),
+        Text(
+          sr.pickupAddress ??
+              '${sr.pickupLocation.lat.toStringAsFixed(5)}, ${sr.pickupLocation.lng.toStringAsFixed(5)}',
+        ),
         if (sr.dropoffLocation != null) ...[
           const SizedBox(height: 16),
           Text('Drop-off', style: Theme.of(context).textTheme.labelLarge),
           Text(
-            '${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}',
+            sr.dropoffAddress ??
+                '${sr.dropoffLocation!.lat.toStringAsFixed(5)}, ${sr.dropoffLocation!.lng.toStringAsFixed(5)}',
           ),
         ],
         if (_error != null) ...[

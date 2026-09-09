@@ -80,16 +80,20 @@ class AutoserveApi {
     required ServiceType serviceType,
     required double pickupLat,
     required double pickupLng,
+    String? pickupAddress,
     double? dropoffLat,
     double? dropoffLng,
+    String? dropoffAddress,
     String? problemDescription,
   }) async {
     final response = await _dio.post('/service-requests', data: {
       'service_type': serviceType == ServiceType.mechanic ? 'MECHANIC' : 'RECOVERY',
       'pickup_lat': pickupLat,
       'pickup_lng': pickupLng,
+      'pickup_address': ?pickupAddress,
       'dropoff_lat': ?dropoffLat,
       'dropoff_lng': ?dropoffLng,
+      'dropoff_address': ?dropoffAddress,
       'problem_description': ?problemDescription,
     });
     return ServiceRequestDto.fromJson(response.data as Map<String, dynamic>);
