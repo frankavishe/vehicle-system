@@ -98,7 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 RequestDetailScreen(requestId: state.pathParameters['id']!),
           ),
           // Pushed (not a shell tab) and returns its result via
-          // `context.pop(ll.LatLng)` — see LocationPickerScreen's
+          // `context.pop(CapturedLocation)` — see LocationPickerScreen's
           // docstring for why request_service_screen.dart needs this
           // instead of only Geolocator.getCurrentPosition().
           GoRoute(

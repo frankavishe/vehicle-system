@@ -138,7 +138,9 @@ export interface ServiceRequest {
   service_type: ServiceType;
   status: ServiceRequestStatus;
   pickup_location: LatLng;
+  pickup_address: string | null;
   dropoff_location: LatLng | null;
+  dropoff_address: string | null;
   problem_description: string | null;
   estimated_fare: string | null;
   final_fare: string | null;

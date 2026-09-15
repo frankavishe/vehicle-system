@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { PartsRequestApproval } from "@/components/tracking/PartsRequestApproval";
 import { ServiceRequestStatusBadge } from "@/components/tracking/ServiceRequestStatusBadge";
 import { TrackingMapClientOnly } from "@/components/tracking/TrackingMapClientOnly";
 import { ApiError } from "@/lib/api/errors";
@@ -80,6 +81,14 @@ export default async function TrackServiceRequestPage({
           <p className="text-sm text-steel">{serviceRequest.provider?.full_name ?? "Not yet assigned"}</p>
         </div>
       </div>
+
+      {/* Parts sourcing only applies to mechanic jobs (backend rejects it
+          for RECOVERY), and only the owning customer can approve/pay —
+          the assigned mechanic requests parts from their own job-detail
+          screen instead (web/src/components/mechanic/PartsSourcingRequestForm.tsx). */}
+      {serviceRequest.service_type === "MECHANIC" && serviceRequest.customer.id === user.id && (
+        <PartsRequestApproval serviceRequestId={serviceRequest.id} />
+      )}
     </div>
   );
 }

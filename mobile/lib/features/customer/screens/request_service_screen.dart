@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' as ll;
 
 import '../../../core/api/autoserve_api.dart';
+import '../../../core/api/nominatim_client.dart';
+import '../../../shared/models/captured_location.dart';
 import '../../../shared/models/service_request.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -30,8 +32,9 @@ class RequestServiceScreen extends ConsumerStatefulWidget {
 class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
   ServiceType _serviceType = ServiceType.mechanic;
   final _description = TextEditingController();
-  ll.LatLng? _pickup;
-  ll.LatLng? _dropoff;
+  final _nominatim = NominatimClient();
+  CapturedLocation? _pickup;
+  CapturedLocation? _dropoff;
   bool _locating = false;
   bool _submitting = false;
   String? _error;
@@ -66,9 +69,10 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
     });
     final position = await _getCurrentPosition();
     setState(() {
-      _pickup = position;
+      _pickup = position == null ? null : CapturedLocation(point: position, resolving: true);
       _locating = false;
     });
+    if (position != null) _resolvePickupAddress(position);
   }
 
   Future<void> _captureDropoff() async {
@@ -78,8 +82,24 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
     });
     final position = await _getCurrentPosition();
     setState(() {
-      _dropoff = position;
+      _dropoff = position == null ? null : CapturedLocation(point: position, resolving: true);
       _locating = false;
+    });
+    if (position != null) _resolveDropoffAddress(position);
+  }
+
+  void _resolvePickupAddress(ll.LatLng point) {
+    _nominatim.reverseGeocode(lat: point.latitude, lng: point.longitude).then((address) {
+      // Guard against a slower, now-stale lookup overwriting a newer capture.
+      if (!mounted || _pickup?.point != point) return;
+      setState(() => _pickup = CapturedLocation(point: point, address: address));
+    });
+  }
+
+  void _resolveDropoffAddress(ll.LatLng point) {
+    _nominatim.reverseGeocode(lat: point.latitude, lng: point.longitude).then((address) {
+      if (!mounted || _dropoff?.point != point) return;
+      setState(() => _dropoff = CapturedLocation(point: point, address: address));
     });
   }
 
@@ -89,12 +109,19 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
   /// user to drop a pin, rather than assuming drop-off is wherever this
   /// device currently is.
   Future<void> _pickDropoffOnMap() async {
-    final picked = await context.push<ll.LatLng>('/customer/pick-location', extra: _pickup);
+    final picked = await context.push<CapturedLocation>(
+      '/customer/pick-location',
+      extra: _pickup?.point,
+    );
     if (picked != null && mounted) {
       setState(() {
         _dropoff = picked;
         _error = null;
       });
+      // The picker screen's own lookup may not have finished before the
+      // user tapped "Use this location" — finish it here rather than
+      // leaving the tile stuck showing "locating address…" forever.
+      if (picked.resolving) _resolveDropoffAddress(picked.point);
     }
   }
 
@@ -117,10 +144,12 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
           .read(autoserveApiProvider)
           .createServiceRequest(
             serviceType: _serviceType,
-            pickupLat: _pickup!.latitude,
-            pickupLng: _pickup!.longitude,
-            dropoffLat: _dropoff?.latitude,
-            dropoffLng: _dropoff?.longitude,
+            pickupLat: _pickup!.point.latitude,
+            pickupLng: _pickup!.point.longitude,
+            pickupAddress: _pickup!.address,
+            dropoffLat: _dropoff?.point.latitude,
+            dropoffLng: _dropoff?.point.longitude,
+            dropoffAddress: _dropoff?.address,
             problemDescription: _description.text.trim().isEmpty ? null : _description.text.trim(),
           );
       if (!mounted) return;
@@ -207,7 +236,7 @@ class _LocationTile extends StatelessWidget {
   });
 
   final String label;
-  final ll.LatLng? position;
+  final CapturedLocation? position;
   final bool loading;
   final VoidCallback onCapture;
   // Only drop-off passes this — pickup is always "wherever the customer
@@ -231,7 +260,11 @@ class _LocationTile extends StatelessWidget {
                 Text(
                   position == null
                       ? 'Not captured yet'
-                      : '${position!.latitude.toStringAsFixed(5)}, ${position!.longitude.toStringAsFixed(5)}',
+                      : position!.resolving
+                          ? 'Locating address…'
+                          : position!.address ??
+                              '${position!.point.latitude.toStringAsFixed(5)}, '
+                                  '${position!.point.longitude.toStringAsFixed(5)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

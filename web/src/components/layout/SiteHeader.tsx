@@ -47,7 +47,9 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm font-medium sm:flex">
-          <NavLink href="/catalog">Catalog</NavLink>
+          {user?.role !== "MECHANIC" && user?.role !== "RECOVERY" && (
+            <NavLink href="/catalog">Catalog</NavLink>
+          )}
           {user?.role === "CUSTOMER" && (
             <>
               <NavLink href="/orders">My orders</NavLink>

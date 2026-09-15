@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { CancelOrderButton } from "@/components/orders/CancelOrderButton";
 import { OrderStatusBadge } from "@/components/orders/OrderStatusBadge";
+import { PayOrderButton } from "@/components/orders/PayOrderButton";
 import { apiFetch } from "@/lib/api/server";
 import { ApiError } from "@/lib/api/errors";
 import { getSession } from "@/lib/auth/session";
@@ -84,7 +85,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
 
-          {order.status === "PENDING" && <CancelOrderButton orderId={order.id} />}
+          {order.status === "PENDING" && (
+            <div className="flex flex-col items-end gap-3">
+              <PayOrderButton orderId={order.id} />
+              <CancelOrderButton orderId={order.id} />
+            </div>
+          )}
         </aside>
       </div>
     </div>

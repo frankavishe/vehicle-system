@@ -21,9 +21,11 @@ _$ServiceRequestDtoImpl _$$ServiceRequestDtoImplFromJson(
   pickupLocation: LatLngPoint.fromJson(
     json['pickup_location'] as Map<String, dynamic>,
   ),
+  pickupAddress: json['pickup_address'] as String?,
   dropoffLocation: json['dropoff_location'] == null
       ? null
       : LatLngPoint.fromJson(json['dropoff_location'] as Map<String, dynamic>),
+  dropoffAddress: json['dropoff_address'] as String?,
   problemDescription: json['problem_description'] as String?,
   estimatedFare: json['estimated_fare'] as String?,
   finalFare: json['final_fare'] as String?,
@@ -39,7 +41,9 @@ Map<String, dynamic> _$$ServiceRequestDtoImplToJson(
   'service_type': _$ServiceTypeEnumMap[instance.serviceType]!,
   'status': _$ServiceStatusEnumMap[instance.status]!,
   'pickup_location': instance.pickupLocation,
+  'pickup_address': instance.pickupAddress,
   'dropoff_location': instance.dropoffLocation,
+  'dropoff_address': instance.dropoffAddress,
   'problem_description': instance.problemDescription,
   'estimated_fare': instance.estimatedFare,
   'final_fare': instance.finalFare,
